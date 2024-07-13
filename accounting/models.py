@@ -1,13 +1,15 @@
 from django.db import models
 from shared.models import BaseModel
 from authentication.models import User
-from lead.models import Student
+# from lead.models import Student
 
 
 class Check(BaseModel):
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE)
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    is_confirmed_check = models.BooleanField(default=False)
+    amount = ...
+    file = ...
+    student = models.ForeignKey('lead.Student', on_delete=models.CASCADE)
+    is_confirmed = models.BooleanField(default=False)
 
 
 class Salary(BaseModel):
@@ -15,7 +17,7 @@ class Salary(BaseModel):
     find = models.FloatField(default=0.0)
     debt = models.FloatField(default=0.0)
     kpi_amount = models.FloatField(default=0.0)
-    total_salary = models.FloatField(default=0.0)
+    total = models.FloatField(default=0.0)
 
 
 class OutcomeType(BaseModel):
@@ -24,6 +26,5 @@ class OutcomeType(BaseModel):
 
 
 class Outcome(BaseModel):
-    outcome_type = models.ForeignKey(OutcomeType, on_delete=models.CASCADE)
-    spent_amount = models.FloatField(default=0.0)
-    rest_amount = models.FloatField(default=0.0)
+    type = models.ForeignKey(OutcomeType, on_delete=models.CASCADE)
+    amount = models.FloatField(default=0.0)
