@@ -3,8 +3,7 @@ from django.db import models
 
 class Lead(models.Model):
     STATUS_CHOICES = (
-        (1, 'JOINED'),
-        (2, 'ACTIVE'),
+
     )
 
     name = models.CharField(max_length=250)
