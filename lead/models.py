@@ -3,12 +3,13 @@ from django.db import models
 
 class Lead(models.Model):
     STATUS_CHOICES = (
-
+        (1, 'JOINED'),
+        (2, 'INTERESTED')
     )
 
     name = models.CharField(max_length=250)
     phone = models.CharField(max_length=100)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=2)
     address = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
 
