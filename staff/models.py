@@ -46,4 +46,4 @@ class SuperAdmin(models.Model):
         return self.full_name
 
 
-# Create your models here.
+
