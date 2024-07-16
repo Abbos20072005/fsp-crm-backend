@@ -40,6 +40,12 @@ class OutcomeSerializer(serializers.ModelSerializer):
         fields = ['id', 'type', 'amount', ]
 
 
+class OutcomeFilterSerializer(serializers.Serializer):
+    type = serializers.IntegerField(required=False)
+    time_from = serializers.DateTimeField(required=False)
+    time_to = serializers.DateTimeField(required=False)
+
+
 
 
 

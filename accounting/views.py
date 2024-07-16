@@ -1,9 +1,14 @@
+from django.db.models import Q
 from rest_framework.generics import RetrieveUpdateAPIView, ListAPIView, ListCreateAPIView, UpdateAPIView
 from .serializers import CheckSerializer, OutcomeTypeSerializer, OutcomeSerializer
 from .models import Check, OutcomeType, Outcome
 from core.custom_pagination import CustomPagination
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.viewsets import ViewSet
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+from .serializers import OutcomeFilterSerializer
 
 
 class CheckRetrieveUpdateAPIView(RetrieveUpdateAPIView):
@@ -109,3 +114,29 @@ class OutcomeListCreateAPIView(ListCreateAPIView):
 class UserSalaryListAPIView(ListAPIView):
     pagination_class = CustomPagination
 
+
+class OutcomeFilterViewSet(ViewSet):
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('type', openapi.IN_QUERY, description='Outcome Type', type=openapi.TYPE_INTEGER),
+            openapi.Parameter('time_from', openapi.IN_QUERY, description='Start time', type=openapi.TYPE_STRING),
+            openapi.Parameter('time_to', openapi.IN_QUERY, description='End time', type=openapi.TYPE_STRING),
+        ],
+        operation_summary='Outcome Filter',
+        operation_description='Outcome Filter',
+        responses={200: OutcomeSerializer()},
+        tags=['Outcome']
+    )
+    def outcome_filter(self, request):
+        serializer = OutcomeFilterSerializer(data=request.query_params)
+
+        if not serializer.is_valid():
+            return Response(data={'error': serializer.errors, 'ok': False}, status=status.HTTP_400_BAD_REQUEST)
+
+        types = request.query_params.get('type')
+        time_from = request.query_params.get('time_from')
+        time_to = request.query_params.get('time_to')
+
+        outcome = Outcome.objects.filter(Q(type=types) | Q(created_at__gte=time_from, created_at__lte=time_to))
+        return Response(data={'result': OutcomeSerializer(outcome, many=True).data, 'ok': True},
+                        status=status.HTTP_200_OK)
