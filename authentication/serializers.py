@@ -1,8 +1,8 @@
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
+from .models import User
 
-from authentication.models import User
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -23,3 +23,10 @@ class ChangePasswordSerializer(serializers.Serializer):
     model = User
     old_password = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True)
+
+
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'role', 'fixed_salary']
