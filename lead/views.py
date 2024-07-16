@@ -24,17 +24,3 @@ class LeadViewSet(ViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CommentViewSet(ViewSet):
-    @swagger_auto_schema(
-        operation_description='Create a Comment',
-        operation_summary='Create a Comment',
-        request_body=CommentSerializer,
-        responses={201: 'Comment created'},
-    )
-    def create(self, request):
-        data = request.data
-        serializer = CommentSerializer(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
