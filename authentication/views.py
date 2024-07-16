@@ -6,7 +6,8 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
 from rest_framework_simplejwt.tokens import RefreshToken
 from authentication.models import User
-from .serializers import UserRegisterSerializer, ChangePasswordSerializer,UserUpdateSerializer
+from .serializers import UserRegisterSerializer, ChangePasswordSerializer, UserUpdateSerializer, \
+    ChangeUserPasswordSerializer
 from .permissions import IsSuperAdminOrHR, IsEmployee
 
 
@@ -65,12 +66,26 @@ class UserViewSet(viewsets.ViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def update(self, request, pk=None):
-        user = User.objects.filter(pk=pk).first()
+    @action(detail=True, permission_classes=[IsSuperAdminOrHR])
+    def update(self, request, pk):
+        user = User.objects.get(pk=pk)
         if user:
             serializer = UserUpdateSerializer(user, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'message': 'User not found', 'ok': False}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, permission_classes=[IsSuperAdminOrHR])
+    def change_user_password(self, request, pk):
+        user = User.objects.get(pk=pk)
+        if user:
+            serializer = ChangeUserPasswordSerializer(data=request.data)
+            if serializer.is_valid():
+                new_password = serializer.data.get('new_password')
+                user.set_password(new_password)
+                user.save()
+                return Response({'message': 'Password successfully changed', 'ok': True}, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response({'message': 'User not found', 'ok': False}, status=status.HTTP_404_NOT_FOUND)
