@@ -1,8 +1,9 @@
 from django.urls import path
-#
-# urlpatterns = [
-#
-# ]
+from .views import LeadViewSet
+
+urlpatterns = [
+    path('lead/', LeadViewSet.as_view({'post': 'create'})),
+]
 
 """
 /filter - all/status/admin/..filter by fields
