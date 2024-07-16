@@ -5,9 +5,8 @@ from rest_framework.decorators import permission_classes, action
 from rest_framework.response import Response
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
 from rest_framework_simplejwt.tokens import RefreshToken
-
 from authentication.models import User
-from .serializers import UserRegisterSerializer, ChangePasswordSerializer
+from .serializers import UserRegisterSerializer, ChangePasswordSerializer,UserUpdateSerializer
 from .permissions import IsSuperAdminOrHR, IsEmployee
 
 
@@ -65,3 +64,13 @@ class UserViewSet(viewsets.ViewSet):
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, pk=None):
+        user = User.objects.filter(pk=pk).first()
+        if user:
+            serializer = UserUpdateSerializer(user, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'message': 'User not found', 'ok': False}, status=status.HTTP_404_NOT_FOUND)
