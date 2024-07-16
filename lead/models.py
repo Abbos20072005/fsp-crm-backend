@@ -42,8 +42,8 @@ class Student(models.Model):
     passport_number = models.CharField(max_length=100)
     personal_number = models.CharField(max_length=100)
     passport = models.FileField(upload_to='passport/')
-    father_passport = models.FileField(max_length=100)
-    mother_passport = models.FileField(max_length=100)
+    father_passport = models.FileField(upload_to='passport/')
+    mother_passport = models.FileField(upload_to='passport/')
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
