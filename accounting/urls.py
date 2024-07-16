@@ -3,7 +3,7 @@ from .views import (CheckRetrieveUpdateAPIView, CheckListAPIView, CheckStudentLi
                     OutcomeTypeDestroy, CheckDestroy, OutcomeListCreateAPIView)
 
 urlpatterns = [
-    path('<int:pk>/', CheckRetrieveUpdateAPIView.as_view()),
+    path('checks/<int:pk>/', CheckRetrieveUpdateAPIView.as_view()),
     path('checks/', CheckListAPIView.as_view()),
     path('student/<int:pk>/checks', CheckStudentListAPIView.as_view()),
     path('outcometypes/', OutcomeTypeListCreateAPIView.as_view()),
@@ -19,5 +19,4 @@ urlpatterns = [
 /staff/:id - Retrieve
 /check :id - RetrieveUpdate   +
 /check/:leadId - list of checks by leadId   +
-
 """

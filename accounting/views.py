@@ -1,11 +1,7 @@
 from rest_framework.generics import RetrieveUpdateAPIView, ListAPIView, ListCreateAPIView, UpdateAPIView
-
-from authentication.models import User
 from .serializers import CheckSerializer, OutcomeTypeSerializer, OutcomeSerializer
 from .models import Check, OutcomeType, Outcome
 from core.custom_pagination import CustomPagination
-from rest_framework.viewsets import ViewSet
-from lead.models import Student
 from rest_framework.response import Response
 from rest_framework import status
 
@@ -20,7 +16,7 @@ class CheckListAPIView(ListAPIView):
     pagination_class = CustomPagination
 
     def get_queryset(self):
-        return Check.objects.filter(is_deleted=False)
+        return Check.objects.filter(is_deleted=False).order_by('-created_at')
 
 
 class CheckStudentListAPIView(ListAPIView):

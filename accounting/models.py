@@ -19,7 +19,7 @@ class Check(BaseModel):
 
 class Salary(BaseModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    find = models.DecimalField(default=0.00, max_digits=15, decimal_places=2)
+    fine = models.DecimalField(default=0.00, max_digits=15, decimal_places=2)
     debt = models.DecimalField(default=0.00, max_digits=15, decimal_places=2)
     kpi_amount = models.DecimalField(default=0.00, max_digits=15, decimal_places=2)
     total = models.DecimalField(default=0.00, max_digits=15, decimal_places=2)
@@ -29,8 +29,14 @@ class OutcomeType(BaseModel):
     name = models.CharField(max_length=255)
     limit = models.DecimalField(default=0.00, max_digits=15, decimal_places=2)
 
+    def __str__(self):
+        return self.name
+
 
 class Outcome(BaseModel):
     type = models.ForeignKey(OutcomeType, on_delete=models.CASCADE)
     amount = models.DecimalField(default=0.00, max_digits=15, decimal_places=2)
+
+    def __str__(self):
+        return f'{self.type.name}'
 
