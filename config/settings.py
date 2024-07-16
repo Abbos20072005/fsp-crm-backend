@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     # system packages
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'drf_yasg',
 
     # local apps
