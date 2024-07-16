@@ -168,3 +168,4 @@ class UserViewSet(viewsets.ViewSet):
                 return Response({'message': 'Password successfully changed', 'ok': True}, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response({'message': 'User not found', 'ok': False}, status=status.HTTP_404_NOT_FOUND)
+
