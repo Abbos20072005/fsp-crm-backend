@@ -2,13 +2,13 @@ from drf_yasg.utils import swagger_auto_schema
 
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
-from rest_framework import status, viewsets
+from rest_framework import status
 
 from .models import Lead, Student, Comment
 from .serializer import LeadCreateSerializer, CommentSerializer
 
 
-class LeadViewSet(viewsets.ModelViewSet):
+class LeadViewSet(ViewSet):
     @swagger_auto_schema(
         operation_description='Create a Lead',
         operation_summary='Create a Lead',
@@ -24,7 +24,7 @@ class LeadViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CommentViewSet(viewsets.ModelViewSet):
+class CommentViewSet(ViewSet):
     @swagger_auto_schema(
         operation_description='Create a Comment',
         operation_summary='Create a Comment',

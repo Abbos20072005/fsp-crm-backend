@@ -11,7 +11,7 @@ class LeadSerializer(serializers.ModelSerializer):
 class LeadCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lead
-        fields = ['id', 'name', 'phone', 'address']
+        fields = ['name', 'phone', 'address']
 
 
 class CommentSerializer(serializers.ModelSerializer):

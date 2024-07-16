@@ -2,16 +2,6 @@ from django.db import models
 from authentication.models import User
 
 
-class Comment(models.Model):
-    comment = models.TextField()
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return self.comment
-
-
 class Lead(models.Model):
     STATUS_CHOICES = (
         (1, 'JOINED'),
@@ -26,12 +16,22 @@ class Lead(models.Model):
     address = models.CharField(max_length=100)
     admin = models.ForeignKey(User, on_delete=models.CASCADE)
 
-    comment = models.ForeignKey(Comment, on_delete=models.CASCADE)
-
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
+
+
+class Comment(models.Model):
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE)
+
+    comment = models.TextField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.comment
 
 
 class Student(models.Model):
