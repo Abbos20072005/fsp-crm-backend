@@ -4,8 +4,7 @@ from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Lead, Student, Comment
-from .serializer import LeadCreateSerializer, CommentSerializer
+from .serializer import LeadCreateSerializer
 
 
 class LeadViewSet(ViewSet):

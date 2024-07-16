@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import LeadViewSet, CommentViewSet
+from .views import LeadViewSet
 
 urlpatterns = [
     path('lead/', LeadViewSet.as_view({'post': 'create'})),
