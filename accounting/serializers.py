@@ -1,19 +1,9 @@
-from authentication.models import User
-from .models import Check, OutcomeType, Outcome, Salary
+from .models import Check, OutcomeType, Outcome
 from rest_framework import serializers
-
-
-class UserSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(read_only=True)
-
-    class Meta:
-        model = User
-        fields = ('id', 'username', 'role', 'kpi', 'fixed_salary')
 
 
 class CheckSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
-    uploaded_by = UserSerializer(read_only=True)
 
     class Meta:
         model = Check

@@ -1,118 +1,158 @@
 from django.db.models import Q
-from rest_framework.generics import RetrieveUpdateAPIView, ListAPIView, ListCreateAPIView, UpdateAPIView
-from .serializers import CheckSerializer, OutcomeTypeSerializer, OutcomeSerializer
-from .models import Check, OutcomeType, Outcome
-from core.custom_pagination import CustomPagination
-from rest_framework.response import Response
-from rest_framework import status
 from rest_framework.viewsets import ViewSet
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from .serializers import OutcomeFilterSerializer
+from rest_framework.response import Response
+from rest_framework import status
+from core.custom_pagination import CustomPagination
+from .models import Check, OutcomeType, Outcome
+from .serializers import CheckSerializer, OutcomeTypeSerializer, OutcomeSerializer
+from rest_framework.permissions import IsAuthenticated
+from lead.models import Student
 
 
-class CheckRetrieveUpdateAPIView(RetrieveUpdateAPIView):
-    serializer_class = CheckSerializer
-    queryset = Check.objects.filter(is_deleted=False)
-
-
-class CheckListAPIView(ListAPIView):
+class CheckViewSet(ViewSet):
     serializer_class = CheckSerializer
     pagination_class = CustomPagination
+    permission_classes = [IsAuthenticated, ]
 
-    def get_queryset(self):
-        return Check.objects.filter(is_deleted=False).order_by('-created_at')
-
-
-class CheckStudentListAPIView(ListAPIView):
-    def list(self, request, *args, **kwargs):
-        student_id = self.kwargs['pk']
-        checks = Check.objects.filter(student_id=student_id, is_deleted=False)
-        serializer = CheckSerializer(checks, many=True)
+    def list(self, request):
+        queryset = Check.objects.filter(is_deleted=False).order_by('-created_at')
+        serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
-class OutcomeTypeListCreateAPIView(ListCreateAPIView):
-    pagination_class = CustomPagination
-
-    def list(self, request, *args, **kwargs):
-        outcome_type = OutcomeType.objects.filter(is_deleted=False)
-        serializer = OutcomeTypeSerializer(outcome_type, many=True)
+    def student_checks(self, request, pk=None):
+        student = Student.objects.filter(pk=pk, is_deleted=False).first()
+        if not student:
+            return Response({'error': 'Student not found.'}, status=status.HTTP_404_NOT_FOUND)
+        queryset = Check.objects.filter(student=student, is_deleted=False).order_by('-created_at')
+        if not queryset:
+            return Response({'error': 'Checks not found.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def post(self, request, *args, **kwargs):
-        data = request.data
-        serializer = OutcomeTypeSerializer(data=data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def create(self, request):
+        request.data['uploaded_by'] = self.request.user.id
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-
-class OutcomeTypeRetrieveUpdateAPIView(RetrieveUpdateAPIView):
-    serializer_class = OutcomeTypeSerializer
-    queryset = OutcomeType.objects.filter(is_deleted=False)
-
-
-class OutcomeTypeDestroy(UpdateAPIView):
-    queryset = OutcomeType.objects.filter(is_deleted=False)
-    serializer_class = OutcomeTypeSerializer
-    lookup_field = 'pk'
-
-    def patch(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if not self.get_object().is_deleted:
-            instance.is_deleted = True
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        serializer.save()
-        data = {
-            'success': True,
-            'message': 'Outcome type successfully deleted.',
-        }
-        return Response(data, status=status.HTTP_200_OK)
-
-
-class CheckDestroy(UpdateAPIView):
-    queryset = Check.objects.filter(is_deleted=False)
-    serializer_class = CheckSerializer
-    lookup_field = 'pk'
-
-    def patch(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if not instance.is_deleted:
-            instance.is_deleted = True
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        serializer.save()
-        data = {
-            'success': True,
-            'message': 'Check successfully deleted.',
-        }
-        return Response(data, status=status.HTTP_200_OK)
-
-
-class OutcomeListCreateAPIView(ListCreateAPIView):
-    pagination_class = CustomPagination
-
-    def list(self, request, *args, **kwargs):
-        outcome = Outcome.objects.filter(is_deleted=False)
-        serializer = OutcomeSerializer(outcome, many=True)
+    def retrieve(self, request, pk=None):
+        queryset = Check.objects.filter(pk=pk, is_deleted=False).first()
+        if not queryset:
+            return Response({'error': 'Check not found.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.serializer_class(queryset)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def post(self, request, *args, **kwargs):
-        data = request.data
-        serializer = OutcomeSerializer(data=data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def update(self, request, pk=None):
+        instance = Check.objects.filter(pk=pk, is_deleted=False).first()
+        if not instance:
+            return Response({'error': 'Check not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.serializer_class(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @staticmethod
+    def destroy(self, pk=None):
+        instance = Check.objects.filter(pk=pk, is_deleted=False).first()
+        if not instance:
+            return Response({'error': 'Check not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        instance.is_deleted = True
+        instance.save()
+        return Response({'success': True, 'message': 'Check successfully deleted.'}, status=status.HTTP_200_OK)
+
+
+class OutcomeTypeViewSet(ViewSet):
+    serializer_class = OutcomeTypeSerializer
+    pagination_class = CustomPagination
+    permission_classes = [IsAuthenticated, ]
+
+    def list(self, request):
+        queryset = OutcomeType.objects.filter(is_deleted=False)
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def create(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    def retrieve(self, request, pk=None):
+        queryset = OutcomeType.objects.filter(pk=pk, is_deleted=False).first()
+        if not queryset:
+            return Response({'error': 'Outcome type not found.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.serializer_class(queryset)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-class UserSalaryListAPIView(ListAPIView):
+    def update(self, request, pk=None):
+        instance = OutcomeType.objects.filter(pk=pk, is_deleted=False).first()
+        if not instance:
+            return Response({'error': 'Outcome type not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.serializer_class(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @staticmethod
+    def destroy(self, pk=None):
+        instance = OutcomeType.objects.filter(pk=pk, is_deleted=False).first()
+        if not instance:
+            return Response({'error': 'Outcome type not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        instance.is_deleted = True
+        instance.save()
+        return Response({'success': True, 'message': 'Outcome type successfully deleted.'}, status=status.HTTP_200_OK)
+
+
+class OutcomeViewSet(ViewSet):
+    serializer_class = OutcomeSerializer
     pagination_class = CustomPagination
+    permission_classes = [IsAuthenticated, ]
+
+    def list(self, request):
+        queryset = Outcome.objects.filter(is_deleted=False)
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def create(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def retrieve(self, request, pk=None):
+        queryset = Outcome.objects.filter(pk=pk, is_deleted=False).first()
+        if not queryset:
+            return Response({'error': 'Outcome not found.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.serializer_class(queryset)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def update(self, request, pk=None):
+        instance = Outcome.objects.filter(pk=pk, is_deleted=False).first()
+        if not instance:
+            return Response({'error': 'Outcome not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.serializer_class(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @staticmethod
+    def destroy(self, pk=None):
+        instance = Outcome.objects.filter(pk=pk, is_deleted=False).first()
+        if not instance:
+            return Response({'error': 'Outcome not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        instance.is_deleted = True
+        instance.save()
+        return Response({'success': True, 'message': 'Outcome successfully deleted.'}, status=status.HTTP_200_OK)
 
 
 class OutcomeFilterViewSet(ViewSet):
