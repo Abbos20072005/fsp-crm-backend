@@ -9,11 +9,11 @@ from core.custom_pagination import CustomPagination
 from .models import Check, OutcomeType, Outcome
 from .serializers import CheckSerializer, OutcomeTypeSerializer, OutcomeSerializer
 from rest_framework.permissions import IsAuthenticated
-from lead.models import Student
 from .dtos.requests import (CheckRequestSerializer, OutcomeTypeRequestSerializer, OutcomeRequestSerializer,
                             CheckRequestUpdateSerializer, OutcomeTypeRequestUpdateSerializer,
                             OutcomeRequestUpdateSerializer)
 from rest_framework.parsers import MultiPartParser, FormParser
+from .utils import whose_check_list, whose_check_detail, whose_student
 
 
 class CheckViewSet(ViewSet):
@@ -24,8 +24,8 @@ class CheckViewSet(ViewSet):
 
     @swagger_auto_schema(responses={200: CheckSerializer(many=True)})
     def list(self, request):
-        queryset = Check.objects.filter(is_deleted=False).order_by('-created_at')
-        serializer = self.serializer_class(queryset, many=True)
+        check = whose_check_list(request)
+        serializer = self.serializer_class(check, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
@@ -35,7 +35,7 @@ class CheckViewSet(ViewSet):
         responses={200: CheckSerializer(many=True), 404: "Student not found"}
     )
     def student_checks(self, request, pk=None):
-        student = Student.objects.filter(pk=pk, is_deleted=False).first()
+        student = whose_student(request, pk=pk)
         if not student:
             return Response({'error': 'Student not found.'}, status=status.HTTP_404_NOT_FOUND)
         queryset = Check.objects.filter(student=student, is_deleted=False).order_by('-created_at')
@@ -62,10 +62,10 @@ class CheckViewSet(ViewSet):
         responses={200: CheckSerializer(), 404: "Check not found"}
     )
     def retrieve(self, request, pk=None):
-        queryset = Check.objects.filter(pk=pk, is_deleted=False).first()
-        if not queryset:
+        check = whose_check_detail(request, pk=pk)
+        if not check:
             return Response({'error': 'Check not found.'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = self.serializer_class(queryset)
+        serializer = self.serializer_class(check)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
@@ -76,11 +76,11 @@ class CheckViewSet(ViewSet):
         responses={200: CheckSerializer(), 400: "Invalid data provided", 404: "Check not found"}
     )
     def update(self, request, pk=None):
-        instance = Check.objects.filter(pk=pk, is_deleted=False).first()
-        if not instance:
+        check = whose_check_detail(request, pk=pk)
+        if not check:
             return Response({'error': 'Check not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = self.serializer_class(instance, data=request.data, partial=True)
+        serializer = self.serializer_class(check, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
