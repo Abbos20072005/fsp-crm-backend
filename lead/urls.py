@@ -2,7 +2,8 @@ from django.urls import path
 from .views import LeadViewSet
 
 urlpatterns = [
-    path('lead/', LeadViewSet.as_view({'post': 'create'})),
+    path('', LeadViewSet.as_view({'post': 'create'})),
+    path('<int:lead_id>/', LeadViewSet.as_view({'put': 'update', 'delete': 'delete'})),
 ]
 
 """

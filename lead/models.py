@@ -1,8 +1,9 @@
 from django.db import models
 from authentication.models import User
+from core.BaseModel import BaseModel
 
 
-class Lead(models.Model):
+class Lead(BaseModel):
     STATUS_CHOICES = (
         (1, 'JOINED'),
         (2, 'INTERESTED'),
