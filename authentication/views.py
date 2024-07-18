@@ -13,14 +13,12 @@ from .permissions import IsSuperAdminOrHR, IsEmployee
 from drf_yasg import openapi
 
 
-
 class UserViewSet(viewsets.ViewSet):
     @swagger_auto_schema(
         request_body=UserRegisterSerializer,
         responses={201: UserRegisterSerializer, 400: 'Bad Request'},
         operation_summary="Register a new user",
         operation_description="This endpoint allows SuperAdmin or HR to register a new user.")
-
     @action(detail=True, permission_classes=[IsSuperAdminOrHR])
     def register(self, request):
         serializer = UserRegisterSerializer(data=request.data)
@@ -52,7 +50,6 @@ class UserViewSet(viewsets.ViewSet):
         },
         operation_summary="User login",
         operation_description="This endpoint allows a user to log in and get access and refresh tokens.")
-
     @action(detail=True, permission_classes=[IsEmployee])
     def login(self, request):
         data = request.data
@@ -81,7 +78,6 @@ class UserViewSet(viewsets.ViewSet):
         operation_summary="Logout a user",
         operation_description="This endpoint allows a user to log out by blacklisting the refresh token."
     )
-
     @action(detail=True, permission_classes=[IsEmployee])
     def logout(self, request):
         refresh_token = request.data.get('refresh_token')
@@ -168,4 +164,3 @@ class UserViewSet(viewsets.ViewSet):
                 return Response({'message': 'Password successfully changed', 'ok': True}, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response({'message': 'User not found', 'ok': False}, status=status.HTTP_404_NOT_FOUND)
-
