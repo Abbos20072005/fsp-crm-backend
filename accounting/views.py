@@ -10,6 +10,8 @@ from .models import Check, OutcomeType, Outcome
 from .serializers import CheckSerializer, OutcomeTypeSerializer, OutcomeSerializer
 from rest_framework.permissions import IsAuthenticated
 from lead.models import Student
+from exceptions.exception import CustomApiException
+from exceptions.error_codes import ErrorCodes
 
 
 class CheckViewSet(ViewSet):
@@ -171,7 +173,7 @@ class OutcomeFilterViewSet(ViewSet):
         serializer = OutcomeFilterSerializer(data=request.query_params)
 
         if not serializer.is_valid():
-            return Response(data={'error': serializer.errors, 'ok': False}, status=status.HTTP_400_BAD_REQUEST)
+            raise CustomApiException(ErrorCodes.VALIDATION_FAILED.value, message=serializer.errors)
 
         types = request.query_params.get('type')
         time_from = request.query_params.get('time_from')
