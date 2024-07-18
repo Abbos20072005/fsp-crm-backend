@@ -9,6 +9,11 @@ from core.custom_pagination import CustomPagination
 from .models import Check, OutcomeType, Outcome
 from .serializers import CheckSerializer, OutcomeTypeSerializer, OutcomeSerializer
 from rest_framework.permissions import IsAuthenticated
+from .dtos.requests import (CheckRequestSerializer, OutcomeTypeRequestSerializer, OutcomeRequestSerializer,
+                            CheckRequestUpdateSerializer, OutcomeTypeRequestUpdateSerializer,
+                            OutcomeRequestUpdateSerializer)
+from rest_framework.parsers import MultiPartParser, FormParser
+from .utils import whose_check_list, whose_check_detail, whose_student
 from lead.models import Student
 from exceptions.exception import CustomApiException
 from exceptions.error_codes import ErrorCodes
@@ -18,14 +23,22 @@ class CheckViewSet(ViewSet):
     serializer_class = CheckSerializer
     pagination_class = CustomPagination
     permission_classes = [IsAuthenticated, ]
+    parser_classes = [MultiPartParser, FormParser]
 
+    @swagger_auto_schema(responses={200: CheckSerializer(many=True)})
     def list(self, request):
-        queryset = Check.objects.filter(is_deleted=False).order_by('-created_at')
-        serializer = self.serializer_class(queryset, many=True)
+        check = whose_check_list(request)
+        serializer = self.serializer_class(check, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('pk', openapi.IN_PATH, description="Student ID", type=openapi.TYPE_INTEGER),
+        ],
+        responses={200: CheckSerializer(many=True), 404: "Student not found"}
+    )
     def student_checks(self, request, pk=None):
-        student = Student.objects.filter(pk=pk, is_deleted=False).first()
+        student = whose_student(request, pk=pk)
         if not student:
             return Response({'error': 'Student not found.'}, status=status.HTTP_404_NOT_FOUND)
         queryset = Check.objects.filter(student=student, is_deleted=False).order_by('-created_at')
@@ -34,6 +47,10 @@ class CheckViewSet(ViewSet):
         serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(
+        request_body=CheckRequestSerializer,
+        responses={201: CheckSerializer(), 400: "Invalid data provided"}
+    )
     def create(self, request):
         request.data['uploaded_by'] = self.request.user.id
         serializer = self.serializer_class(data=request.data)
@@ -41,25 +58,43 @@ class CheckViewSet(ViewSet):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('pk', openapi.IN_PATH, description="Check ID", type=openapi.TYPE_INTEGER),
+        ],
+        responses={200: CheckSerializer(), 404: "Check not found"}
+    )
     def retrieve(self, request, pk=None):
-        queryset = Check.objects.filter(pk=pk, is_deleted=False).first()
-        if not queryset:
+        check = whose_check_detail(request, pk=pk)
+        if not check:
             return Response({'error': 'Check not found.'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = self.serializer_class(queryset)
+        serializer = self.serializer_class(check)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('pk', openapi.IN_PATH, description="Check ID", type=openapi.TYPE_INTEGER),
+        ],
+        request_body=CheckRequestUpdateSerializer,
+        responses={200: CheckSerializer(), 400: "Invalid data provided", 404: "Check not found"}
+    )
     def update(self, request, pk=None):
-        instance = Check.objects.filter(pk=pk, is_deleted=False).first()
-        if not instance:
+        check = whose_check_detail(request, pk=pk)
+        if not check:
             return Response({'error': 'Check not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = self.serializer_class(instance, data=request.data, partial=True)
+        serializer = self.serializer_class(check, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @staticmethod
-    def destroy(self, pk=None):
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('pk', openapi.IN_PATH, description="Check ID", type=openapi.TYPE_INTEGER),
+        ],
+        responses={200: openapi.Response('Success'), 404: "Check not found"}
+    )
+    def destroy(self, request, pk=None):
         instance = Check.objects.filter(pk=pk, is_deleted=False).first()
         if not instance:
             return Response({'error': 'Check not found.'}, status=status.HTTP_404_NOT_FOUND)
@@ -74,17 +109,28 @@ class OutcomeTypeViewSet(ViewSet):
     pagination_class = CustomPagination
     permission_classes = [IsAuthenticated, ]
 
+    @swagger_auto_schema(responses={200: OutcomeTypeSerializer(many=True)})
     def list(self, request):
         queryset = OutcomeType.objects.filter(is_deleted=False)
         serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(
+        request_body=OutcomeTypeRequestSerializer,
+        responses={201: OutcomeTypeSerializer(), 400: "Invalid data provided"}
+    )
     def create(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('pk', openapi.IN_PATH, description="Outcome Type ID", type=openapi.TYPE_INTEGER),
+        ],
+        responses={200: OutcomeTypeSerializer(), 404: "Outcome type not found"}
+    )
     def retrieve(self, request, pk=None):
         queryset = OutcomeType.objects.filter(pk=pk, is_deleted=False).first()
         if not queryset:
@@ -92,6 +138,13 @@ class OutcomeTypeViewSet(ViewSet):
         serializer = self.serializer_class(queryset)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('pk', openapi.IN_PATH, description="Outcome Type ID", type=openapi.TYPE_INTEGER),
+        ],
+        request_body=OutcomeTypeRequestUpdateSerializer,
+        responses={200: OutcomeTypeSerializer(), 400: "Invalid data provided", 404: "Outcome type not found"}
+    )
     def update(self, request, pk=None):
         instance = OutcomeType.objects.filter(pk=pk, is_deleted=False).first()
         if not instance:
@@ -102,8 +155,13 @@ class OutcomeTypeViewSet(ViewSet):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @staticmethod
-    def destroy(self, pk=None):
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('pk', openapi.IN_PATH, description="Outcome Type ID", type=openapi.TYPE_INTEGER),
+        ],
+        responses={200: openapi.Response('Success'), 404: "Outcome type not found"}
+    )
+    def destroy(self, request, pk=None):
         instance = OutcomeType.objects.filter(pk=pk, is_deleted=False).first()
         if not instance:
             return Response({'error': 'Outcome type not found.'}, status=status.HTTP_404_NOT_FOUND)
@@ -118,17 +176,28 @@ class OutcomeViewSet(ViewSet):
     pagination_class = CustomPagination
     permission_classes = [IsAuthenticated, ]
 
+    @swagger_auto_schema(responses={200: OutcomeSerializer(many=True)})
     def list(self, request):
         queryset = Outcome.objects.filter(is_deleted=False)
         serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(
+        request_body=OutcomeRequestSerializer,
+        responses={201: OutcomeSerializer(), 400: "Invalid data provided"}
+    )
     def create(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('pk', openapi.IN_PATH, description="Outcome ID", type=openapi.TYPE_INTEGER),
+        ],
+        responses={200: OutcomeSerializer(), 404: "Outcome not found"}
+    )
     def retrieve(self, request, pk=None):
         queryset = Outcome.objects.filter(pk=pk, is_deleted=False).first()
         if not queryset:
@@ -136,6 +205,13 @@ class OutcomeViewSet(ViewSet):
         serializer = self.serializer_class(queryset)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('pk', openapi.IN_PATH, description="Outcome ID", type=openapi.TYPE_INTEGER),
+        ],
+        request_body=OutcomeRequestUpdateSerializer,
+        responses={200: OutcomeSerializer(), 400: "Invalid data provided", 404: "Outcome not found"}
+    )
     def update(self, request, pk=None):
         instance = Outcome.objects.filter(pk=pk, is_deleted=False).first()
         if not instance:
@@ -146,8 +222,13 @@ class OutcomeViewSet(ViewSet):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @staticmethod
-    def destroy(self, pk=None):
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('pk', openapi.IN_PATH, description="Outcome ID", type=openapi.TYPE_INTEGER),
+        ],
+        responses={200: openapi.Response('Success'), 404: "Outcome not found"}
+    )
+    def destroy(self, request, pk=None):
         instance = Outcome.objects.filter(pk=pk, is_deleted=False).first()
         if not instance:
             return Response({'error': 'Outcome not found.'}, status=status.HTTP_404_NOT_FOUND)
