@@ -177,6 +177,13 @@ class OutcomeFilterViewSet(ViewSet):
         time_from = request.query_params.get('time_from')
         time_to = request.query_params.get('time_to')
 
-        outcome = Outcome.objects.filter(Q(type=types) | Q(created_at__gte=time_from, created_at__lte=time_to))
+        result = {}
+        if types:
+            result['type'] = types
+        if time_from and time_to:
+            result['created_at__gte'] = time_from
+            result['created_at__lte'] = time_to
+
+        outcome = Outcome.objects.filter(**result)
         return Response(data={'result': OutcomeSerializer(outcome, many=True).data, 'ok': True},
                         status=status.HTTP_200_OK)
