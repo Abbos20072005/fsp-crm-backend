@@ -47,7 +47,6 @@ urlpatterns = [
     path('api/v1/accounting/', include('accounting.urls')),
     path('api/v1/lead/', include('lead.urls')),
     path('api/v1/statistics/', include('stats.urls')),
-    path('api/v1/staff/', include('staff.urls')),
     re_path(r'static/(?P<path>.*)$', serve, {'document_root': settings.STATIC_ROOT}),
     re_path(r'media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
     re_path(r"^swagger(?P<format>\.json|\.yaml)$", schema_view.without_ui(cache_timeout=0), name="schema-json"),
