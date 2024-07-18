@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CheckViewSet, OutcomeTypeViewSet, OutcomeViewSet
+from .views import CheckViewSet, OutcomeTypeViewSet, OutcomeViewSet, OutcomeFilterViewSet
 
 urlpatterns = [
     path('checks/<int:pk>/', CheckViewSet.as_view({'get': 'retrieve', 'delete': 'destroy', 'put': 'update'})),
@@ -12,6 +12,7 @@ urlpatterns = [
     path('outcome/<int:pk>/', OutcomeViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'})),
     path('outcomes/', OutcomeViewSet.as_view({'get': 'list', 'post': 'create'})),
 
+    path('outcome/filter/', OutcomeFilterViewSet.as_view({'get': 'outcome_filter'})),
 ]
 
 """
