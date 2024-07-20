@@ -8,6 +8,12 @@ class LeadSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'phone', 'address', 'status', 'created_at']
 
 
+class LeadStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Lead
+        fields = ['status',]
+
+
 class LeadCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lead
