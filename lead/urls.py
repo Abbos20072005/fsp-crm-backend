@@ -1,9 +1,10 @@
 from django.urls import path
-from .views import LeadViewSet
+from .views import LeadViewSet, FilteredLeadViewSet
 
 urlpatterns = [
     path('create/', LeadViewSet.as_view({'post': 'create'})),
     path('<int:lead_id>/', LeadViewSet.as_view({'put': 'update', 'delete': 'delete'})),
+    path('list/', FilteredLeadViewSet.as_view({'get': 'list'})),
 ]
 
 """

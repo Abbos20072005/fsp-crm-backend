@@ -5,7 +5,8 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import Lead
-from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer
+from .permissions import check_role
+from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, CommentSerializer
 
 
 class LeadViewSet(ViewSet):
@@ -48,7 +49,8 @@ class FilteredLeadViewSet(ViewSet):
         operation_description='Filter a Lead',
         responses={200: 'Lead filtered'},
     )
-    def filter_by_admin(self, request, admin_id):
-        leads = Lead.objects.filter(admin_id=admin_id)
+    @check_role
+    def list(self, request, leads, *args, **kwargs):
+        # Serialize the leads and return the response
         serializer = LeadSerializer(leads, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
