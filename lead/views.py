@@ -6,7 +6,8 @@ from rest_framework import status
 
 from .models import Lead
 from .permissions import check_role
-from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, CommentSerializer
+from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, CommentSerializer, \
+    LeadStatusSerializer
 
 
 class LeadViewSet(ViewSet):
@@ -52,5 +53,22 @@ class FilteredLeadViewSet(ViewSet):
     @check_role
     def list(self, request, leads, *args, **kwargs):
         # Serialize the leads and return the response
+        serializer = LeadSerializer(leads, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def check_status(self, request):
+        data = request.data
+        serializer = LeadStatusSerializer(data=data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if serializer.validated_data['status'] == 1:
+            leads = Lead.objects.filter(status=1)
+        elif serializer.validated_data['status'] == 2:
+            leads = Lead.objects.filter(status=2)
+        elif serializer.validated_data['status'] == 4:
+            leads = Lead.objects.filter(status=4)
+        else:
+            return Response(data={'error': 'Status not found'},
+                            status=status.HTTP_404_NOT_FOUND)
         serializer = LeadSerializer(leads, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

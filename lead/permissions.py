@@ -1,6 +1,7 @@
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Lead
+from .serializer import LeadStatusSerializer
 
 
 def check_role(func):
@@ -17,3 +18,6 @@ def check_role(func):
         return func(self, request, leads, *args, **kwargs)
 
     return wrapper
+
+
+
