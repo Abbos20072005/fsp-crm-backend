@@ -5,7 +5,8 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import Lead
-from .serializer import LeadCreateSerializer, LeadUpdateSerializer
+from .permissions import check_role
+from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, CommentSerializer
 
 
 class LeadViewSet(ViewSet):
@@ -41,3 +42,15 @@ class LeadViewSet(ViewSet):
         lead.is_deleted = True
         lead.save(update_fields=['is_deleted'])
         return Response(data={"message": "Lead successfully deleted"}, status=status.HTTP_204_NO_CONTENT)
+
+
+class FilteredLeadViewSet(ViewSet):
+    @swagger_auto_schema(
+        operation_description='Filter a Lead',
+        responses={200: 'Lead filtered'},
+    )
+    @check_role
+    def list(self, request, leads, *args, **kwargs):
+        # Serialize the leads and return the response
+        serializer = LeadSerializer(leads, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

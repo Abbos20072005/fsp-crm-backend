@@ -2,34 +2,29 @@ from django.db import models
 from authentication.models import User
 from core.BaseModel import BaseModel
 
+STATUS_CHOICES = (
+    (1, 'INTERESTED'),
+    (2, 'POSSIBLE'),
+    (3, 'JOINED'),
+    (4, 'CANCELLED'),
+)
+
 
 class Lead(BaseModel):
-    STATUS_CHOICES = (
-        (1, 'JOINED'),
-        (2, 'INTERESTED'),
-        (3, 'PAYED'),
-        (4, 'CANCELLED'),
-    )
-
     name = models.CharField(max_length=250)
     phone = models.CharField(max_length=100)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=2)
+    status = models.IntegerField(choices=STATUS_CHOICES, default=1, blank=True, null=True)
     address = models.CharField(max_length=100)
-    admin = models.ForeignKey(User, on_delete=models.CASCADE)
-
-    created_at = models.DateTimeField(auto_now_add=True)
+    admin = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
 
     def __str__(self):
         return self.name
 
 
-class Comment(models.Model):
+class Comment(BaseModel):
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE)
 
     comment = models.TextField()
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.comment

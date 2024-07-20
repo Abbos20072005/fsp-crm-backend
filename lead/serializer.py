@@ -5,23 +5,22 @@ from .models import Lead, Comment
 class LeadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lead
-        fields = ['id', 'name', 'phone', 'address', 'created_at']
+        fields = ['id', 'name', 'phone', 'address', 'status', 'created_at']
 
 
 class LeadCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lead
-        fields = ['admin','name', 'phone', 'address']
+        fields = ['admin', 'name', 'phone', 'address']
 
 
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
-        fields = ['id', 'comment', 'created_at', 'updated_at']
+        fields = ['id', 'comment']
 
 
 class LeadUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lead
         fields = ["admin", "name", "phone", "status", "address"]
-
