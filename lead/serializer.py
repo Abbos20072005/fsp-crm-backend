@@ -5,7 +5,7 @@ from .models import Lead, Comment
 class LeadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lead
-        fields = ['id', 'name', 'phone', 'address', 'created_at']
+        fields = ['id', 'name', 'phone', 'address', 'status', 'created_at']
 
 
 class LeadCreateSerializer(serializers.ModelSerializer):
