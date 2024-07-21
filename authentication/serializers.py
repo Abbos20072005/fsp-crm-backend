@@ -27,18 +27,6 @@ class ChangePasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField(required=True)
 
 
-class LogoutSerializer(serializers.Serializer):
-    refresh_token = serializers.CharField(required=True)
-
-    def validate_refresh_token(self, value):
-        if not is_valid_token(value):
-            raise serializers.ValidationError('Token is invalid or expired')
-        blacklisted_token = BlacklistedToken.objects.filter(token__token=value).exists()
-        if blacklisted_token:
-            raise serializers.ValidationError('Token is already in blacklist')
-        return value
-
-
 class ChangeUserDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -52,3 +40,15 @@ class ChangeUserDetailsSerializer(serializers.ModelSerializer):
 
 class ChangeUserPasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField(write_only=True)
+
+
+class LogoutSerializer(serializers.Serializer):
+    refresh_token = serializers.CharField(required=True)
+
+    def validate_refresh_token(self, value):
+        if not is_valid_token(value):
+            raise serializers.ValidationError('Token is invalid or expired')
+        blacklisted_token = BlacklistedToken.objects.filter(token__token=value).exists()
+        if blacklisted_token:
+            raise serializers.ValidationError('Token is already in blacklist')
+        return value
