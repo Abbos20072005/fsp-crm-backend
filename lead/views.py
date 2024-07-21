@@ -25,6 +25,12 @@ class LeadViewSet(ViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(
+        operation_description='Update a Lead',
+        operation_summary='Update a Lead',
+        request_body=LeadCreateSerializer,
+        responses={200: 'Lead updated'},
+    )
     def update(self, request, lead_id):
         lead = Lead.objects.filter(pk=lead_id).first()
         if not lead:
@@ -33,9 +39,15 @@ class LeadViewSet(ViewSet):
         serializer = LeadUpdateSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(
+        operation_description='Delete a Lead',
+        operation_summary='Delete a Lead',
+        request_body=LeadCreateSerializer,
+        responses={200: 'Lead deleted'},
+    )
     def delete(self, request, lead_id):
         lead = Lead.objects.filter(pk=lead_id).first()
         if not lead:
