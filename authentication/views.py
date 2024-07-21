@@ -5,7 +5,7 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from authentication.models import User
-from .serializers import UserRegisterSerializer, ChangePasswordSerializer, \
+from .serializers import UserSerializer, UserRegisterSerializer, ChangePasswordSerializer, \
     ChangeUserPasswordSerializer, ChangeUserDetailsSerializer, LogoutSerializer
 from drf_yasg import openapi
 from core.BasePermissions import is_super_admin_or_hr, is_employee
@@ -13,8 +13,18 @@ from core.BasePermissions import is_super_admin_or_hr, is_employee
 
 class UserViewSet(viewsets.ViewSet):
     @swagger_auto_schema(
+        responses={200: UserSerializer()},
+        operation_summary="Get user details",
+        operation_description="Get user details",
+    )
+    @is_employee
+    def auth_me(self, request):
+        user = User.objects.filter(pk=request.user.id).first()
+        return Response(data={'result': UserSerializer(user).data}, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
         request_body=UserRegisterSerializer,
-        responses={201: UserRegisterSerializer, 400: 'Bad Request'},
+        responses={201: UserRegisterSerializer(), 400: 'Bad Request'},
         operation_summary="Register a new user",
         operation_description="This endpoint allows SuperAdmin or HR to register a new user."
     )
