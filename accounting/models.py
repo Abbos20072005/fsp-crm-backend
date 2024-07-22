@@ -3,6 +3,7 @@ from core.BaseModel import BaseModel
 from authentication.models import User
 from django.core.validators import FileExtensionValidator
 from lead.models import Student
+from django.db.models import F
 
 
 class Check(BaseModel):
@@ -19,10 +20,20 @@ class Check(BaseModel):
 
 class Salary(BaseModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    fine = models.DecimalField(default=0.00, max_digits=15, decimal_places=2)
-    debt = models.DecimalField(default=0.00, max_digits=15, decimal_places=2)
     kpi_amount = models.DecimalField(default=0.00, max_digits=15, decimal_places=2)
-    total = models.DecimalField(default=0.00, max_digits=15, decimal_places=2)
+    total = models.GeneratedField(
+        expression=(models.F('fixed_salary') + models.F('kpi_amount')) - (models.F('fine') + models.F('debt')),
+        output_field=models.DurationField(), db_persist=True)
+
+
+class ExpenditureStaff(BaseModel):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    description = models.CharField(max_length=777)
+    amount = models.DecimalField(default=0.00, max_digits=15, decimal_places=2)
+
+    def __str__(self):
+        return f'{self.name} {self.user.username}'
 
 
 class OutcomeType(BaseModel):
@@ -39,4 +50,3 @@ class Outcome(BaseModel):
 
     def __str__(self):
         return f'{self.type.name}'
-
