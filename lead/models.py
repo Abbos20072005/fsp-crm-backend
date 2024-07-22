@@ -30,7 +30,7 @@ class Comment(BaseModel):
         return self.comment
 
 
-class Student(models.Model):
+class Student(BaseModel, models.Model):
     lead = models.OneToOneField(Lead, on_delete=models.CASCADE)
 
     full_name = models.CharField(max_length=250)
@@ -38,20 +38,28 @@ class Student(models.Model):
     passport_number = models.CharField(max_length=100)
     personal_number = models.CharField(max_length=100)
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
     def __str__(self):
         return self.full_name
 
 
-class StudentDocuments(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+class DocumentType(BaseModel, models.Model):
     name = models.CharField(max_length=250)
-    info = models.CharField(max_length=250, blank=True, null=True)
-    document = models.FileField(upload_to='document/', default='/None.jpg')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
+
+
+class StudentDocuments(BaseModel, models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    type = models.ForeignKey(DocumentType, on_delete=models.CASCADE)
+    name = models.CharField(max_length=250)
+    info = models.CharField(max_length=250, blank=True, null=True)
+    document = models.FileField(upload_to='document/', default='/None.jpg')
+
+    class Meta:
+        unique_together = ('student', 'document')
+        ordering = ['name']
+
+    def __str__(self):
+        # return self.name
+        return '%s: %s ' % (self.student, self.type)
