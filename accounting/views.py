@@ -8,7 +8,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 from core.custom_pagination import CustomPagination
-from core.BasePermissions import is_super_admin_or_hr, is_from_money_department, is_admin
+from core.BasePermissions import is_super_admin_or_hr, is_from_money_department, is_admin_or_super_admin, is_accountant_or_super_admin
 
 from exceptions.exception import CustomApiException
 from exceptions.error_codes import ErrorCodes
@@ -55,7 +55,7 @@ class CheckViewSet(ViewSet):
         request_body=CheckRequestSerializer,
         responses={201: CheckSerializer(), 400: "Invalid data provided"}
     )
-    @is_admin
+    @is_admin_or_super_admin
     def create(self, request):
         request.data['uploaded_by'] = self.request.user.id
         serializer = self.serializer_class(data=request.data)
@@ -370,6 +370,7 @@ class CheckFilterViewSet(ViewSet):
         responses={200: CheckSerializer()},
         tags=['Check']
     )
+    @is_accountant_or_super_admin
     def check_filter(self, request):
         print('*' * 30, request, '*' * 30)
         print('*' * 30, request.query_params, '*' * 30)
@@ -398,6 +399,7 @@ class AdminCheckFilterViewSet(ViewSet):
         responses={200: CheckSerializer()},
         tags=['Check']
     )
+    @is_accountant_or_super_admin
     def check_by_admin_filter(self, request):
         serializer = AdminCheckFilterSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)

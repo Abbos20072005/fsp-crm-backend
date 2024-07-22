@@ -63,9 +63,9 @@ def is_from_money_department(func):
     return wrapper
 
 
-def is_admin(func):
+def is_admin_or_super_admin(func):
     def wrapper(self, request, *args, **kwargs):
-        if request.user.is_authenticated and request.user.role == 1:
+        if request.user.is_authenticated and request.user.role in [1, 4]:
             return func(self, request, *args, **kwargs)
         return Response(data={'error': 'You do not have permission to perform this action'},
                         status=status.HTTP_403_FORBIDDEN)
