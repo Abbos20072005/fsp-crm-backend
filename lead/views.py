@@ -4,10 +4,10 @@ from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Lead
+from .models import Lead, Student
 from .permissions import check_role
 from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, CommentSerializer, \
-    LeadStatusSerializer
+    LeadStatusSerializer, StudentSerializer
 
 
 class LeadViewSet(ViewSet):
@@ -71,4 +71,26 @@ class FilteredLeadViewSet(ViewSet):
             return Response(data={'error': 'Status not found'},
                             status=status.HTTP_404_NOT_FOUND)
         serializer = LeadSerializer(leads, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class StudentViewSet(ViewSet):
+    @swagger_auto_schema(
+        operation_description='Create a Student',
+        operation_summary='Create a Student',
+        request_body=StudentSerializer,
+        responses={201: 'Student created', },
+        tags=['Student']
+    )
+    def create(self, request):
+        data = request.data
+        serializer = StudentSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def list(self, request):
+        data = request.data
+        serializer = StudentSerializer(data, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

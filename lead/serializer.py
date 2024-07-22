@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Lead, Comment
+from .models import Lead, Comment, Student
 
 
 class LeadSerializer(serializers.ModelSerializer):
@@ -11,7 +11,7 @@ class LeadSerializer(serializers.ModelSerializer):
 class LeadStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lead
-        fields = ['status',]
+        fields = ['status', ]
 
 
 class LeadCreateSerializer(serializers.ModelSerializer):
@@ -30,3 +30,11 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lead
         fields = ["admin", "name", "phone", "status", "address"]
+
+
+# TODO check the students
+
+class StudentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Student
+        fields = ['id', 'full_name', 'phone', 'passport_number', 'personal_number']

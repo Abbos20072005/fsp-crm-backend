@@ -37,12 +37,21 @@ class Student(models.Model):
     phone = models.CharField(max_length=100)
     passport_number = models.CharField(max_length=100)
     personal_number = models.CharField(max_length=100)
-    passport = models.FileField(upload_to='passport/')
-    father_passport = models.FileField(upload_to='passport/')
-    mother_passport = models.FileField(upload_to='passport/')
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.full_name
+
+
+class StudentDocuments(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    name = models.CharField(max_length=250)
+    info = models.CharField(max_length=250, blank=True, null=True)
+    document = models.FileField(upload_to='document/', default='/None.jpg')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
