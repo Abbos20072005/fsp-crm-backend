@@ -125,6 +125,9 @@ class UserViewSet(viewsets.ViewSet):
         )
 
     @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('user_id', openapi.IN_PATH, description="User ID", type=openapi.TYPE_INTEGER),
+        ],
         request_body=ChangeUserDetailsSerializer,
         responses={
             200: ChangeUserDetailsSerializer,
@@ -167,3 +170,23 @@ class UserViewSet(viewsets.ViewSet):
         user.set_password(new_password)
         user.save()
         return Response({'message': 'Password successfully changed', 'ok': True}, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('user_id', openapi.IN_PATH, description="User ID", type=openapi.TYPE_INTEGER),
+        ],
+        responses={
+            200: 'User soft deleted successfully',
+            404: 'User not found'
+        },
+        operation_summary="Soft delete user",
+        operation_description="Soft delete user"
+    )
+    @is_super_admin_or_hr
+    def soft_delete(self, request, user_id):
+        user = User.objects.filter(pk=user_id).first()
+        if not user:
+            return Response(data={'message': 'User not found', 'ok': False}, status=status.HTTP_404_NOT_FOUND)
+        user.is_deleted = True
+        user.save(update_fields=['is_deleted'])
+        return Response(data={'message': 'User soft deleted successfully', 'ok': True}, status=status.HTTP_200_OK)

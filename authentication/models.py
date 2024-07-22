@@ -14,6 +14,7 @@ class User(AbstractUser):
     role = models.IntegerField(choices=ROLE_CHOICES, default=1)
     kpi = models.DecimalField(default=0.00, max_digits=15, decimal_places=2)
     fixed_salary = models.DecimalField(default=0.00, max_digits=15, decimal_places=2)
+    is_deleted = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
