@@ -1,22 +1,24 @@
 from django.db.models import Q
+from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser
+
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from .serializers import OutcomeFilterSerializer
-from rest_framework.response import Response
-from rest_framework import status
+
 from core.custom_pagination import CustomPagination
+
+from exceptions.exception import CustomApiException
+from exceptions.error_codes import ErrorCodes
+
 from .models import Check, OutcomeType, Outcome
-from .serializers import CheckSerializer, OutcomeTypeSerializer, OutcomeSerializer
-from rest_framework.permissions import IsAuthenticated
+from .utils import whose_check_list, whose_check_detail, whose_student
+from .serializers import CheckSerializer, OutcomeTypeSerializer, OutcomeSerializer, OutcomeFilterSerializer
 from .dtos.requests import (CheckRequestSerializer, OutcomeTypeRequestSerializer, OutcomeRequestSerializer,
                             CheckRequestUpdateSerializer, OutcomeTypeRequestUpdateSerializer,
                             OutcomeRequestUpdateSerializer)
-from rest_framework.parsers import MultiPartParser, FormParser
-from .utils import whose_check_list, whose_check_detail, whose_student
-from lead.models import Student
-from exceptions.exception import CustomApiException
-from exceptions.error_codes import ErrorCodes
 
 
 class CheckViewSet(ViewSet):
