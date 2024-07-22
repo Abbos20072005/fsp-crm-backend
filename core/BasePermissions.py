@@ -51,3 +51,23 @@ def is_from_student_department(func):
                         status=status.HTTP_403_FORBIDDEN)
 
     return wrapper
+
+
+def is_from_money_department(func):
+    def wrapper(self, request, *args, **kwargs):
+        if request.user.is_authenticated and request.user.role in [2, 3, 4]:
+            return func(self, request, *args, **kwargs)
+        return Response(data={'error': 'You do not have permission to perform this action'},
+                        status=status.HTTP_403_FORBIDDEN)
+
+    return wrapper
+
+
+def is_admin(func):
+    def wrapper(self, request, *args, **kwargs):
+        if request.user.is_authenticated and request.user.role == 1:
+            return func(self, request, *args, **kwargs)
+        return Response(data={'error': 'You do not have permission to perform this action'},
+                        status=status.HTTP_403_FORBIDDEN)
+
+    return wrapper

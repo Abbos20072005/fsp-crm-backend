@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Check, Salary, OutcomeType, Outcome
+from .models import Check, Salary, OutcomeType, Outcome, ExpenditureStaff
 
 
 class CheckAdmin(admin.ModelAdmin):
@@ -22,8 +22,13 @@ class OutcomeAdmin(admin.ModelAdmin):
     list_display_links = ['id', 'type', ]
 
 
+class ExpenditureStaffAdmin(admin.ModelAdmin):
+    list_display = ['id', 'user', 'name', ]
+    list_display_links = ['id', 'name', ]
+
+
 admin.site.register(Check, CheckAdmin)
 admin.site.register(Salary, SalaryAdmin)
 admin.site.register(OutcomeType, OutcomeTypeAdmin)
 admin.site.register(Outcome, OutcomeAdmin)
-
+admin.site.register(ExpenditureStaff, ExpenditureStaffAdmin)

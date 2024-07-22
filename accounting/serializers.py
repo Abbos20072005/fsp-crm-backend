@@ -1,4 +1,4 @@
-from .models import Check, OutcomeType, Outcome, Salary
+from .models import Check, OutcomeType, Outcome, Salary, ExpenditureStaff
 from rest_framework import serializers
 from authentication.models import User
 
@@ -52,3 +52,11 @@ class SalarySerializer(serializers.ModelSerializer):
     class Meta:
         model = Salary
         fields = "__all__"
+
+
+class ExpenditureStaffSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = ExpenditureStaff
+        fields = ['id', 'user', 'name', 'description', 'amount']
