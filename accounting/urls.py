@@ -1,5 +1,6 @@
 from django.urls import path
-from .views import CheckViewSet, OutcomeTypeViewSet, OutcomeViewSet, OutcomeFilterViewSet, ExpenditureStaffViewSet
+from .views import (CheckViewSet, OutcomeTypeViewSet, OutcomeViewSet, OutcomeFilterViewSet, ExpenditureStaffViewSet,
+                    CheckFilterViewSet, AdminCheckFilterViewSet)
 
 urlpatterns = [
     path('checks/<int:pk>/', CheckViewSet.as_view({'get': 'retrieve', 'delete': 'destroy', 'put': 'update'})),
@@ -18,6 +19,9 @@ urlpatterns = [
     path('expenditure-staff/<int:pk>/',
          ExpenditureStaffViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'})),
     path('expenditure/', ExpenditureStaffViewSet.as_view({'get': 'list', 'post': 'create'})),
+
+    path('check/filter/', CheckFilterViewSet.as_view({'get': 'check_filter'})),
+    path('admin-check/filter/', AdminCheckFilterViewSet.as_view({'get': 'check_by_admin_filter'})),
 ]
 
 """
@@ -27,7 +31,7 @@ urlpatterns = [
 /staff/:id - Retrieve
 /check :id - RetrieveUpdate   +
 /check/:leadId - list of checks by leadId   +
-
+check_by_admin_filter
 
 
 """

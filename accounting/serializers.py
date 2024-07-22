@@ -37,6 +37,17 @@ class OutcomeFilterSerializer(serializers.Serializer):
     time_to = serializers.DateTimeField(required=False)
 
 
+class CheckFilterSerializer(serializers.Serializer):
+    time_from = serializers.DateTimeField(required=False)
+    time_to = serializers.DateTimeField(required=False)
+
+
+class AdminCheckFilterSerializer(serializers.Serializer):
+    uploaded_by = serializers.IntegerField(required=False)
+    time_from = serializers.DateTimeField(required=False)
+    time_to = serializers.DateTimeField(required=False)
+
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User

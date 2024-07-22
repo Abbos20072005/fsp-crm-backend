@@ -16,7 +16,7 @@ from exceptions.error_codes import ErrorCodes
 from .models import Check, OutcomeType, Outcome, ExpenditureStaff
 from .utils import whose_check_list, whose_check_detail, whose_student
 from .serializers import (CheckSerializer, OutcomeTypeSerializer, OutcomeSerializer, OutcomeFilterSerializer,
-                          ExpenditureStaffSerializer)
+                          ExpenditureStaffSerializer, CheckFilterSerializer, AdminCheckFilterSerializer)
 from .dtos.requests import (CheckRequestSerializer, OutcomeTypeRequestSerializer, OutcomeRequestSerializer,
                             CheckRequestUpdateSerializer, OutcomeTypeRequestUpdateSerializer,
                             OutcomeRequestUpdateSerializer, ExpenditureStaffRequestSerializer,
@@ -357,3 +357,60 @@ class ExpenditureStaffViewSet(ViewSet):
         instance.save()
         return Response({'success': True, 'message': 'ExpenditureStaff successfully deleted.'},
                         status=status.HTTP_200_OK)
+
+
+class CheckFilterViewSet(ViewSet):
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('time_from', openapi.IN_QUERY, description='Start time', type=openapi.TYPE_STRING),
+            openapi.Parameter('time_to', openapi.IN_QUERY, description='End time', type=openapi.TYPE_STRING),
+        ],
+        operation_summary='Check Filter',
+        operation_description='Check Filter',
+        responses={200: CheckSerializer()},
+        tags=['Check']
+    )
+    def check_filter(self, request):
+        print('*' * 30, request, '*' * 30)
+        print('*' * 30, request.query_params, '*' * 30)
+        serializer = CheckFilterSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        time_from = request.query_params.get('time_from')
+        time_to = request.query_params.get('time_to')
+        result = {}
+        if time_from and time_to:
+            result['created_at__gte'] = time_from
+            result['created_at__lte'] = time_to
+
+        check = Check.objects.filter(**result)
+        return Response(data=CheckSerializer(check, many=True).data, status=status.HTTP_200_OK)
+
+
+class AdminCheckFilterViewSet(ViewSet):
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('uploaded_by', openapi.IN_QUERY, description='Admin', type=openapi.TYPE_INTEGER),
+            openapi.Parameter('time_from', openapi.IN_QUERY, description='Start time', type=openapi.TYPE_STRING),
+            openapi.Parameter('time_to', openapi.IN_QUERY, description='End time', type=openapi.TYPE_STRING),
+        ],
+        operation_summary='Check Filter',
+        operation_description='Check Filter by admin ID',
+        responses={200: CheckSerializer()},
+        tags=['Check']
+    )
+    def check_by_admin_filter(self, request):
+        serializer = AdminCheckFilterSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        admin = request.query_params.get('uploaded_by')
+        time_from = request.query_params.get('time_from')
+        time_to = request.query_params.get('time_to')
+
+        result = {}
+        if admin:
+            result['uploaded_by'] = admin
+        if time_from and time_to:
+            result['created_at__gte'] = time_from
+            result['created_at__lte'] = time_to
+
+        check = Check.objects.filter(**result)
+        return Response(data=CheckSerializer(check, many=True).data, status=status.HTTP_200_OK)
