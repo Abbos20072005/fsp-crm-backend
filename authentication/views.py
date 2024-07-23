@@ -5,6 +5,7 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from authentication.models import User
+from core.custom_pagination import CustomPagination
 from .serializers import UserSerializer, UserRegisterSerializer, ChangePasswordSerializer, \
     ChangeUserPasswordSerializer, ChangeUserDetailsSerializer, LogoutSerializer, UserFilterSerializer
 from drf_yasg import openapi
@@ -194,37 +195,44 @@ class UserViewSet(viewsets.ViewSet):
 
     @swagger_auto_schema(
         manual_parameters=[
-            openapi.Parameter('role', openapi.IN_QUERY, description='Role of a user', type=openapi.TYPE_INTEGER),
-            openapi.Parameter('kpi', openapi.IN_QUERY, description='KPI of a user', type=openapi.TYPE_STRING),
-            openapi.Parameter('fixed_salary', openapi.IN_QUERY, description='Fixed salary of a user',
-                              type=openapi.TYPE_STRING),
-            openapi.Parameter('created_at', openapi.IN_QUERY, description='Date of creation of a user',
-                              type=openapi.TYPE_STRING),
+            openapi.Parameter('page', openapi.IN_QUERY, description='Page number', type=openapi.TYPE_INTEGER),
+            openapi.Parameter('size', openapi.IN_QUERY, description='Size', type=openapi.TYPE_INTEGER),
         ],
         operation_summary='User Filter',
         operation_description='User Filter',
+        request_body=UserFilterSerializer(),
         responses={200: UserSerializer()},
     )
     @is_super_admin
     def filter_users(self, request):
+        page = int(request.query_params.get('page', 1))
+        size = int(request.query_params.get('size', 10))
+
         serializer = UserFilterSerializer(data=request.query_params)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        role = request.query_params.get('role')
-        kpi = request.query_params.get('kpi')
-        fixed_salary = request.query_params.get('fixed_salary')
-        created_at = request.query_params.get('created_at')
-        result = {}
-        if role:
-            result['role'] = role
-        if kpi:
-            result['kpi__gte'] = kpi
-        if fixed_salary:
-            result['fixed_salary__gte'] = fixed_salary
-        if created_at:
-            result['created_at__gte'] = created_at
-        users = User.objects.filter(**result)
-        return Response(data={'result': UserSerializer(users, many=True).data, 'ok': True},
-                        status=status.HTTP_200_OK)
+        role = serializer.validated_data.get('role')
+        kpi = serializer.validated_data.get('kpi')
+        fixed_salary = serializer.validated_data.get('fixed_salary')
+        created_at = serializer.validated_data.get('created_at')
 
+        result = {}
+        if role is not None:
+            result['role'] = role
+        if kpi is not None:
+            result['kpi__gte'] = kpi
+        if fixed_salary is not None:
+            result['fixed_salary__gte'] = fixed_salary
+        if created_at is not None:
+            result['created_at__gte'] = created_at
+
+        users = User.objects.filter(**result)
+
+        paginator = CustomPagination()
+        paginator.page_size = size
+        paginated_users = paginator.paginate_queryset(users, request)
+
+        return paginator.get_paginated_response(
+            data={'result': UserSerializer(paginated_users, many=True).data, 'ok': True}
+        )
