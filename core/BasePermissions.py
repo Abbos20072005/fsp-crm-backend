@@ -53,7 +53,7 @@ def is_from_student_department(func):
     return wrapper
 
 
-def is_from_money_department(func):
+def is_from_accounting_department(func):
     def wrapper(self, request, *args, **kwargs):
         if request.user.is_authenticated and request.user.role in [2, 3, 4]:
             return func(self, request, *args, **kwargs)
