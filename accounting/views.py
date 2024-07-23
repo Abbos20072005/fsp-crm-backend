@@ -391,8 +391,6 @@ class CheckFilterViewSet(ViewSet):
     )
     @is_accountant_or_super_admin
     def check_filter(self, request):
-        print('*' * 30, request, '*' * 30)
-        print('*' * 30, request.query_params, '*' * 30)
         serializer = CheckFilterSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
         time_from = request.query_params.get('time_from')
@@ -440,8 +438,8 @@ class AdminCheckFilterViewSet(ViewSet):
 class AdminSalaryViewSet(ViewSet):
     @is_accountant_or_super_admin
     def get_salary(self, request, pk=None):
-        salary = calculate_salary_of_admin(pk)
-        return Response(salary, status=status.HTTP_200_OK)
+        data = calculate_salary_of_admin(pk)
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class CheckAmountViewSet(ViewSet):
@@ -449,4 +447,7 @@ class CheckAmountViewSet(ViewSet):
     @is_accountant_or_super_admin
     def get_check(self, request):
         amount = calculate_confirmed_check()
-        return Response(amount, status=status.HTTP_200_OK)
+        data = {
+            'Check amount for this month': amount
+        }
+        return Response(data, status=status.HTTP_200_OK)
