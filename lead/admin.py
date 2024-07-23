@@ -11,9 +11,10 @@ class LeadAdmin(admin.ModelAdmin):
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
-    list_display = ['full_name', 'phone']
+    list_display = ['lead', 'full_name', 'phone', 'is_deleted']
+    list_display_links = ['lead', 'full_name', 'phone', 'is_deleted']
     list_filter = ['is_deleted']
-    search_fields = ['full_name']
+    search_fields = ['full_name', 'phone']
 
 
 @admin.register(DocumentType)
@@ -25,10 +26,6 @@ class DocumentTypeAdmin(admin.ModelAdmin):
 
 @admin.register(StudentDocuments)
 class StudentDocumentsAdmin(admin.ModelAdmin):
-    list_display = ['name', 'info', 'document']
+    list_display = ['student', 'name', 'document']
     list_filter = ['is_deleted']
     search_fields = ['name']
-
-# Register your models here.
-# admin.site.register(Lead, AdminLead)
-# admin.site.register(Comment, AdminComment)

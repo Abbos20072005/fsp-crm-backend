@@ -4,10 +4,10 @@ from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Lead, Student
+from .models import Lead, Student, DocumentType, StudentDocuments
 from .permissions import check_role
 from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, CommentSerializer, \
-    LeadStatusSerializer, StudentSerializer
+    LeadStatusSerializer, StudentSerializer, DocumentTypeSerializer, StudentDocumentSerializer
 
 
 class LeadViewSet(ViewSet):
@@ -71,6 +71,64 @@ class FilteredLeadViewSet(ViewSet):
             return Response(data={'error': 'Status not found'},
                             status=status.HTTP_404_NOT_FOUND)
         serializer = LeadSerializer(leads, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class DocumentTypeViewSet(ViewSet):
+    @swagger_auto_schema(
+        operation_description='Create a Document Type',
+        operation_summary='Create a Student',
+        request_body=DocumentTypeSerializer,
+        responses={201: 'Document Type created', },
+        tags=['Documents']
+    )
+    def create(self, request):
+        serializer = DocumentTypeSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        operation_description='Remove and get document type',
+        responses={200: 'Document type'},
+        tags=['Documents'],
+
+    )
+    def list(self, request):
+        queryset = DocumentType.objects.all()
+        serializer = DocumentTypeSerializer(queryset, many=True)
+        if not serializer.data:
+            return Response(serializer.errors, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class StudentDocumentViewSet(ViewSet):
+    @swagger_auto_schema(
+        operation_description='Create a Document',
+        operation_summary='Create a Document',
+        request_body=StudentDocumentSerializer,
+        responses={201: 'Document created', },
+        tags=['Documents']
+    )
+    def create(self, request):
+        serializer = StudentDocumentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        operation_description='get student documents',
+        responses={200: 'Documents'},
+        tags=['Documents'],
+
+    )
+    def list(self, request):
+        queryset = Student.objects.all()
+        serializer = StudentSerializer(queryset, many=True)
+        if not serializer.data:
+            return Response(serializer.errors, status=status.HTTP_200_OK)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 

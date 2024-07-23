@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Lead, Comment, Student, StudentDocuments
+from .models import Lead, Comment, Student, StudentDocuments, DocumentType
 
 
 class LeadSerializer(serializers.ModelSerializer):
@@ -42,6 +42,12 @@ class StudentSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         instance = super(StudentSerializer, self).to_representation(instance)
         return instance
+
+
+class DocumentTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DocumentType
+        fields = ['id', 'name']
 
 
 class StudentDocumentSerializer(serializers.ModelSerializer):

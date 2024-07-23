@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import LeadViewSet, FilteredLeadViewSet, StudentViewSet
+from .views import LeadViewSet, FilteredLeadViewSet, StudentViewSet, DocumentTypeViewSet, StudentDocumentViewSet
 
 urlpatterns = [
     path('create/', LeadViewSet.as_view({'post': 'create'})),
@@ -7,6 +7,8 @@ urlpatterns = [
     path('filter/', FilteredLeadViewSet.as_view({'get': 'list'})),
     path('filter/status/', FilteredLeadViewSet.as_view({'post': 'check_status'})),
     path('student/', StudentViewSet.as_view({'get': 'list', 'post': 'create'})),
+    path('document/type/', DocumentTypeViewSet.as_view({'post': 'create', 'get': 'list'})),
+    path('documents/', StudentDocumentViewSet.as_view({'get': 'list', 'post': 'create'})),
 ]
 
 """
