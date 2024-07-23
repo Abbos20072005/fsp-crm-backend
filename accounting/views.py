@@ -1,4 +1,3 @@
-from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 from rest_framework import status
@@ -62,7 +61,9 @@ class CheckViewSet(ViewSet):
     def create(self, request):
         request.data['uploaded_by'] = self.request.user.id
         serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            raise CustomApiException(error_code=ErrorCodes.VALIDATION_FAILED.value, message=serializer.errors)
+        # serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -75,7 +76,7 @@ class CheckViewSet(ViewSet):
     def retrieve(self, request, pk=None):
         check = whose_check_detail(request, pk=pk)
         if not check:
-            return Response({'error': 'Check not found.'}, status=status.HTTP_404_NOT_FOUND)
+            raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
         serializer = self.serializer_class(check)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -89,7 +90,7 @@ class CheckViewSet(ViewSet):
     def update(self, request, pk=None):
         check = whose_check_detail(request, pk=pk)
         if not check:
-            return Response({'error': 'Check not found.'}, status=status.HTTP_404_NOT_FOUND)
+            raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
 
         serializer = self.serializer_class(check, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -106,7 +107,7 @@ class CheckViewSet(ViewSet):
     def confirm_check(self, request, pk=None):
         check = Check.objects.filter(pk=pk, is_deleted=False, is_confirmed=False).firs()
         if not check:
-            return Response({'error': 'Check not found.'}, status=status.HTTP_404_NOT_FOUND)
+            raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
 
         check.is_confirmed = True
         check.save()
@@ -121,7 +122,7 @@ class CheckViewSet(ViewSet):
     def destroy(self, request, pk=None):
         check = whose_check_detail(request, pk=pk)
         if not check:
-            return Response({'error': 'Check not found.'}, status=status.HTTP_404_NOT_FOUND)
+            raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
 
         check.is_deleted = True
         check.save()
@@ -160,7 +161,7 @@ class OutcomeTypeViewSet(ViewSet):
     def retrieve(self, request, pk=None):
         queryset = OutcomeType.objects.filter(pk=pk, is_deleted=False).first()
         if not queryset:
-            return Response({'error': 'Outcome type not found.'}, status=status.HTTP_404_NOT_FOUND)
+            raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
         serializer = self.serializer_class(queryset)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -175,7 +176,7 @@ class OutcomeTypeViewSet(ViewSet):
     def update(self, request, pk=None):
         instance = OutcomeType.objects.filter(pk=pk, is_deleted=False).first()
         if not instance:
-            return Response({'error': 'Outcome type not found.'}, status=status.HTTP_404_NOT_FOUND)
+            raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
 
         serializer = self.serializer_class(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -192,7 +193,7 @@ class OutcomeTypeViewSet(ViewSet):
     def destroy(self, request, pk=None):
         instance = OutcomeType.objects.filter(pk=pk, is_deleted=False).first()
         if not instance:
-            return Response({'error': 'Outcome type not found.'}, status=status.HTTP_404_NOT_FOUND)
+            raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
 
         instance.is_deleted = True
         instance.save()
@@ -232,7 +233,7 @@ class OutcomeViewSet(ViewSet):
     def retrieve(self, request, pk=None):
         queryset = Outcome.objects.filter(pk=pk, is_deleted=False).first()
         if not queryset:
-            return Response({'error': 'Outcome not found.'}, status=status.HTTP_404_NOT_FOUND)
+            raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
         serializer = self.serializer_class(queryset)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -247,7 +248,7 @@ class OutcomeViewSet(ViewSet):
     def update(self, request, pk=None):
         instance = Outcome.objects.filter(pk=pk, is_deleted=False).first()
         if not instance:
-            return Response({'error': 'Outcome not found.'}, status=status.HTTP_404_NOT_FOUND)
+            raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
 
         serializer = self.serializer_class(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -264,7 +265,7 @@ class OutcomeViewSet(ViewSet):
     def destroy(self, request, pk=None):
         instance = Outcome.objects.filter(pk=pk, is_deleted=False).first()
         if not instance:
-            return Response({'error': 'Outcome not found.'}, status=status.HTTP_404_NOT_FOUND)
+            raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
 
         instance.is_deleted = True
         instance.save()
@@ -323,6 +324,9 @@ class ExpenditureStaffViewSet(ViewSet):
     )
     @is_super_admin_or_hr
     def create(self, request):
+        user = ExpenditureStaff.objects.filter(user=request.user.id).first()
+        if user.is_deleted is True:
+            raise CustomApiException(error_code=ErrorCodes.USER_DOES_NOT_EXIST.value)
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -338,7 +342,7 @@ class ExpenditureStaffViewSet(ViewSet):
     def retrieve(self, request, pk=None):
         queryset = ExpenditureStaff.objects.filter(pk=pk, is_deleted=False).first()
         if not queryset:
-            return Response({'error': 'ExpenditureStaff not found.'}, status=status.HTTP_404_NOT_FOUND)
+            raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
         serializer = self.serializer_class(queryset)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
