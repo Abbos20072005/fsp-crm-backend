@@ -11,7 +11,7 @@ class LeadSerializer(serializers.ModelSerializer):
 class LeadStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lead
-        fields = ['status',]
+        fields = ['status', ]
 
 
 class LeadCreateSerializer(serializers.ModelSerializer):
@@ -30,3 +30,15 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lead
         fields = ["admin", "name", "phone", "status", "address"]
+
+
+class MyLeadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Lead
+        fields = ('id', 'name', 'phone', 'status', 'address', 'admin', 'created_at')
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['comments'] = CommentSerializer(Comment.objects.filter(lead=data['id']), many=True).data
+        data['total'] = self.context.get('total', None)
+        return data

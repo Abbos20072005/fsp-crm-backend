@@ -6,8 +6,6 @@ class AdminLead(admin.ModelAdmin):
     list_display = ['name', 'is_deleted']
 
 
-
-
 # Register your models here.
 admin.site.register(Lead, AdminLead)
-# admin.site.register(Comment, AdminComment)
+admin.site.register(Comment)

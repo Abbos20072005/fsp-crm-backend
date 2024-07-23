@@ -7,7 +7,9 @@ from rest_framework import status
 from .models import Lead
 from .permissions import check_role
 from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, CommentSerializer, \
-    LeadStatusSerializer
+    LeadStatusSerializer, MyLeadSerializer
+
+from django.db.models import Q
 
 
 class LeadViewSet(ViewSet):
@@ -84,3 +86,31 @@ class FilteredLeadViewSet(ViewSet):
                             status=status.HTTP_404_NOT_FOUND)
         serializer = LeadSerializer(leads, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class MyLeadViewSet(ViewSet):
+    def my_leads(self, request, *args, **kwargs):
+        user = request.user
+
+        if user.is_authenticated:
+            start_date = request.GET.get('start_date')
+            end_date = request.GET.get('end_date')
+
+            if start_date or end_date:
+                filter_query = Q(admin=user)
+
+                if start_date:
+                    filter_query &= Q(created_at__gte=start_date)
+
+                if end_date:
+                    filter_query &= Q(created_at__lte=end_date)
+
+                my_leads = Lead.objects.filter(filter_query)
+
+            else:
+                my_leads = Lead.objects.filter(admin=user)
+
+            total = len(my_leads)
+            serializer = MyLeadSerializer(my_leads, many=True, context={"total": total})
+            return Response(serializer.data, status.HTTP_200_OK)
+        return Response({"error": "user is not authenticated"}, status.HTTP_401_UNAUTHORIZED)
