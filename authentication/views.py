@@ -184,7 +184,7 @@ class UserViewSet(viewsets.ViewSet):
     )
     @is_super_admin_or_hr
     def soft_delete(self, request, user_id):
-        user = User.objects.filter(pk=user_id).first()
+        user = User.objects.filter(pk=user_id, is_deleted=False).first()
         if not user:
             return Response(data={'message': 'User not found', 'ok': False}, status=status.HTTP_404_NOT_FOUND)
         user.is_deleted = True
