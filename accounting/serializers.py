@@ -1,5 +1,6 @@
-from .models import Check, OutcomeType, Outcome
+from .models import Check, OutcomeType, Outcome, Salary, ExpenditureStaff
 from rest_framework import serializers
+from authentication.models import User
 
 
 class CheckSerializer(serializers.ModelSerializer):
@@ -36,7 +37,37 @@ class OutcomeFilterSerializer(serializers.Serializer):
     time_to = serializers.DateTimeField(required=False)
 
 
+class CheckFilterSerializer(serializers.Serializer):
+    time_from = serializers.DateTimeField(required=False)
+    time_to = serializers.DateTimeField(required=False)
 
 
+class AdminCheckFilterSerializer(serializers.Serializer):
+    uploaded_by = serializers.IntegerField(required=False)
+    time_from = serializers.DateTimeField(required=False)
+    time_to = serializers.DateTimeField(required=False)
 
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["username"]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['salary'] = SalarySerializer(instance, many=True).data
+        return data
+
+
+class SalarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Salary
+        fields = "__all__"
+
+
+class ExpenditureStaffSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = ExpenditureStaff
+        fields = ['id', 'user', 'name', 'description', 'amount']
