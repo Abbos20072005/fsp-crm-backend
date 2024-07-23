@@ -1,6 +1,9 @@
-from .models import Check
 from lead.models import Student
 from .exceptions import BadRequestException
+from django.db.models import Sum
+from authentication.models import User
+from accounting.models import Check
+from accounting.models import ExpenditureStaff
 
 
 def whose_check_list(*args, **kwargs):
@@ -37,3 +40,15 @@ def whose_student(*args, **kwargs):
         return student
     raise BadRequestException("You have not access to see this student's checks")
 
+
+def calculate_salary_of_admin(admin_id: int) -> float:
+    admin = User.objects.filter(id=admin_id, is_deleted=False).first()
+    kpi_from_check = Check.objects.filter(uploaded_by=admin_id).count()
+    expenditure = ExpenditureStaff.objects.filter(user_id=admin_id, is_deleted=False).order_by('-created_at')
+    minus = expenditure.values('amount').distinct().aggregate(total_amount=Sum('amount'))['total_amount']
+    return kpi_from_check * admin.kpi + admin.fixed_salary - minus
+
+
+def calculate_confirmed_check() -> float:
+    check = Check.objects.filter(is_confirmed=True, is_deleted=False).order_by('created_at')
+    return check.values('amount').distinct().aggregate(total_amount=Sum('amount'))['total_amount']
