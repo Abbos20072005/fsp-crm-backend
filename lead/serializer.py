@@ -11,7 +11,7 @@ class LeadSerializer(serializers.ModelSerializer):
 class LeadStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lead
-        fields = ['status',]
+        fields = ['status', ]
 
 
 class LeadCreateSerializer(serializers.ModelSerializer):
@@ -30,3 +30,9 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lead
         fields = ["admin", "name", "phone", "status", "address"]
+
+
+class LeadFilterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Lead
+        fields = '__all__'
