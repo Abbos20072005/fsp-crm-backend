@@ -1,5 +1,6 @@
 from django.urls import path
-from .views import LeadViewSet, FilteredLeadViewSet, StudentViewSet, DocumentTypeViewSet, StudentDocumentViewSet
+from .views import LeadViewSet, FilteredLeadViewSet, StudentViewSet, DocumentTypeViewSet, StudentDocumentViewSet, \
+    MakeStudentViewSet
 
 urlpatterns = [
     path('create/', LeadViewSet.as_view({'post': 'create'})),
@@ -9,6 +10,7 @@ urlpatterns = [
     path('student/', StudentViewSet.as_view({'get': 'list', 'post': 'create'})),
     path('document/type/', DocumentTypeViewSet.as_view({'post': 'create', 'get': 'list'})),
     path('student/<int:student_id>/upload/', StudentDocumentViewSet.as_view({'get': 'list', 'post': 'create'})),
+    path('make-student/', MakeStudentViewSet.as_view({'post': 'create'}))
 ]
 
 """

@@ -7,7 +7,7 @@ from rest_framework import status
 from .models import Lead, Student, DocumentType, StudentDocuments
 from .permissions import check_role
 from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, CommentSerializer, \
-    LeadStatusSerializer, StudentSerializer, DocumentTypeSerializer, StudentDocumentSerializer
+    LeadStatusSerializer, StudentSerializer, DocumentTypeSerializer, StudentDocumentSerializer, MakeStudentSerializer
 
 
 class LeadViewSet(ViewSet):
@@ -160,3 +160,31 @@ class StudentViewSet(ViewSet):
         queryset = Student.objects.all()
         serializer = StudentSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class MakeStudentViewSet(ViewSet):
+    @swagger_auto_schema(
+        operation_description='Create a Student',
+        operation_summary='Create a Student',
+        request_body=MakeStudentSerializer,
+        responses={201: 'Student created', },
+        tags=['Student']
+    )
+    def create(self, request):
+        data = request.data
+        lead = Lead.objects.filter(id=data['lead']).first()
+
+        if not lead:
+            return Response({"error": "Lead not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        student_data = {
+            'full_name': lead.name,
+            'phone': lead.phone,
+        }
+
+        student_data.update(data)
+        serializer = MakeStudentSerializer(data=student_data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

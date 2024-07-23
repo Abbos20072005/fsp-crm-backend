@@ -37,7 +37,7 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
 class StudentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Student
-        fields = ['id', 'full_name', 'phone', 'passport_number', 'personal_number']
+        fields = ['id', 'full_name', 'phone', 'passport_number', 'personal_number', 'lead']
 
     def to_representation(self, instance):
         instance = super(StudentSerializer, self).to_representation(instance)
@@ -54,3 +54,9 @@ class StudentDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentDocuments
         fields = ['id', 'document', 'name', 'student']
+
+
+class MakeStudentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Student
+        fields = ['id', 'full_name', 'phone', 'lead']
