@@ -1,3 +1,4 @@
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 from rest_framework import status
@@ -8,13 +9,15 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 from core.custom_pagination import CustomPagination
-from core.BasePermissions import is_super_admin_or_hr, is_from_money_department, is_admin_or_super_admin, is_accountant_or_super_admin
+from core.BasePermissions import is_super_admin_or_hr, is_from_accounting_department, is_admin_or_super_admin, \
+    is_accountant_or_super_admin
 
 from exceptions.exception import CustomApiException
 from exceptions.error_codes import ErrorCodes
 
 from .models import Check, OutcomeType, Outcome, ExpenditureStaff
-from .utils import whose_check_list, whose_check_detail, whose_student
+from .utils import whose_check_list, whose_check_detail, whose_student, calculate_confirmed_check, \
+    calculate_salary_of_admin
 from .serializers import (CheckSerializer, OutcomeTypeSerializer, OutcomeSerializer, OutcomeFilterSerializer,
                           ExpenditureStaffSerializer, CheckFilterSerializer, AdminCheckFilterSerializer)
 from .dtos.requests import (CheckRequestSerializer, OutcomeTypeRequestSerializer, OutcomeRequestSerializer,
@@ -92,6 +95,22 @@ class CheckViewSet(ViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('pk', openapi.IN_PATH, description="Check ID", type=openapi.TYPE_INTEGER),
+        ],
+        responses={200: openapi.Response('Success'), 404: "Check not found"}
+    )
+    @is_accountant_or_super_admin
+    def confirm_check(self, request, pk=None):
+        check = Check.objects.filter(pk=pk, is_deleted=False, is_confirmed=False).firs()
+        if not check:
+            return Response({'error': 'Check not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        check.is_confirmed = True
+        check.save()
+        return Response({'success': True, 'message': 'Check successfully confirmed.'}, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         manual_parameters=[
@@ -186,7 +205,7 @@ class OutcomeViewSet(ViewSet):
     permission_classes = [IsAuthenticated, ]
 
     @swagger_auto_schema(responses={200: OutcomeSerializer(many=True)})
-    @is_from_money_department
+    @is_from_accounting_department
     def list(self, request):
         queryset = Outcome.objects.filter(is_deleted=False)
         serializer = self.serializer_class(queryset, many=True)
@@ -292,7 +311,7 @@ class ExpenditureStaffViewSet(ViewSet):
     permission_classes = [IsAuthenticated, ]
 
     @swagger_auto_schema(responses={200: ExpenditureStaffSerializer(many=True)})
-    @is_from_money_department
+    @is_from_accounting_department
     def list(self, request):
         queryset = ExpenditureStaff.objects.filter(is_deleted=False)
         serializer = self.serializer_class(queryset, many=True)
@@ -416,3 +435,18 @@ class AdminCheckFilterViewSet(ViewSet):
 
         check = Check.objects.filter(**result)
         return Response(data=CheckSerializer(check, many=True).data, status=status.HTTP_200_OK)
+
+
+class AdminSalaryViewSet(ViewSet):
+    @is_accountant_or_super_admin
+    def get_salary(self, request, pk=None):
+        salary = calculate_salary_of_admin(pk)
+        return Response(salary, status=status.HTTP_200_OK)
+
+
+class CheckAmountViewSet(ViewSet):
+
+    @is_accountant_or_super_admin
+    def get_check(self, request):
+        amount = calculate_confirmed_check()
+        return Response(amount, status=status.HTTP_200_OK)

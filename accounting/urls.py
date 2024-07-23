@@ -1,9 +1,10 @@
 from django.urls import path
 from .views import (CheckViewSet, OutcomeTypeViewSet, OutcomeViewSet, OutcomeFilterViewSet, ExpenditureStaffViewSet,
-                    CheckFilterViewSet, AdminCheckFilterViewSet)
+                    CheckFilterViewSet, AdminCheckFilterViewSet, AdminSalaryViewSet, CheckAmountViewSet)
 
 urlpatterns = [
-    path('checks/<int:pk>/', CheckViewSet.as_view({'get': 'retrieve', 'delete': 'destroy', 'put': 'update'})),
+    path('checks/<int:pk>/',
+         CheckViewSet.as_view({'get': 'retrieve', 'delete': 'destroy', 'put': 'update', 'patch': 'confirm_check'})),
     path('student/<int:pk>/checks/', CheckViewSet.as_view({'get': 'student_checks'})),
     path('checks/', CheckViewSet.as_view({'get': 'list', 'post': 'create'})),
 
@@ -22,6 +23,8 @@ urlpatterns = [
 
     path('check/filter/', CheckFilterViewSet.as_view({'get': 'check_filter'})),
     path('admin-check/filter/', AdminCheckFilterViewSet.as_view({'get': 'check_by_admin_filter'})),
+    path('salary/<int:pk>/', AdminSalaryViewSet.as_view({'get': 'get_salary'})),
+    path('checks-amount/', CheckAmountViewSet.as_view({'get': 'get_check'})),
 ]
 
 """
