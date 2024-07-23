@@ -1,4 +1,5 @@
 from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
@@ -89,6 +90,16 @@ class FilteredLeadViewSet(ViewSet):
 
 
 class MyLeadViewSet(ViewSet):
+    @swagger_auto_schema(
+        operation_description="Admin Dashboard",
+        operation_summary="Admin Dashboard",
+        manual_parameters=[
+            openapi.Parameter('start_date', type=openapi.TYPE_STRING, in_=openapi.IN_QUERY),
+            openapi.Parameter('end_date', type=openapi.TYPE_STRING, in_=openapi.IN_QUERY),
+        ],
+        responses={200: MyLeadSerializer()},
+        tags=['admin_dashboard']
+    )
     def my_leads(self, request, *args, **kwargs):
         user = request.user
 
