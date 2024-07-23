@@ -1,11 +1,13 @@
 from django.urls import path
-from .views import LeadViewSet, FilteredLeadViewSet
+from .views import LeadViewSet, StudentViewSet, DocumentTypeViewSet, StudentDocumentViewSet
 
 urlpatterns = [
     path('create/', LeadViewSet.as_view({'post': 'create'})),
     path('<int:lead_id>/', LeadViewSet.as_view({'put': 'update', 'delete': 'delete'})),
-    path('filter/', FilteredLeadViewSet.as_view({'get': 'list'})),
-    path('filter/status/', FilteredLeadViewSet.as_view({'post': 'check_status'})),
+    path('filter/', LeadViewSet.as_view({'post': 'filter'})),
+    path('student/', StudentViewSet.as_view({'get': 'list', 'post': 'create'})),
+    path('document/type/', DocumentTypeViewSet.as_view({'post': 'create', 'get': 'list'})),
+    path('documents/', StudentDocumentViewSet.as_view({'get': 'list', 'post': 'create'})),
 ]
 
 """
@@ -17,4 +19,3 @@ urlpatterns = [
 
 
 """
-
