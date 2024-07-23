@@ -2,8 +2,6 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
-
-from accounting.serializers import SalarySerializer
 from .models import User
 from .utils import is_valid_token
 
