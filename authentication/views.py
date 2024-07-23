@@ -203,7 +203,8 @@ class UserViewSet(viewsets.ViewSet):
         request_body=UserFilterSerializer(),
         responses={200: UserSerializer()},
     )
-    @is_super_admin
+
+    #@is_super_admin
     def filter_users(self, request):
         page = int(request.query_params.get('page', 1))
         size = int(request.query_params.get('size', 10))

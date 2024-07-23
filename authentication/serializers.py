@@ -2,6 +2,8 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
+
+from accounting.serializers import SalarySerializer
 from .models import User
 from .utils import is_valid_token
 
@@ -63,7 +65,6 @@ class UserFilterSerializer(serializers.Serializer):
     role = serializers.IntegerField(required=False)
     kpi = serializers.DecimalField(required=False, max_digits=15, decimal_places=2)
     fixed_salary = serializers.DecimalField(required=False, max_digits=15, decimal_places=2)
-    created_at = serializers.DateTimeField(format='%Y-%m-%d', input_formats=['%Y-%m-%d'], required=False)
 
     def validate(self, data):
         role = data.get('role', None)
