@@ -5,10 +5,11 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from authentication.models import User
+from core.custom_pagination import CustomPagination
 from .serializers import UserSerializer, UserRegisterSerializer, ChangePasswordSerializer, \
-    ChangeUserPasswordSerializer, ChangeUserDetailsSerializer, LogoutSerializer
+    ChangeUserPasswordSerializer, ChangeUserDetailsSerializer, LogoutSerializer, UserFilterSerializer
 from drf_yasg import openapi
-from core.BasePermissions import is_super_admin_or_hr, is_employee
+from core.BasePermissions import is_super_admin_or_hr, is_employee, is_super_admin
 
 
 class UserViewSet(viewsets.ViewSet):
@@ -62,7 +63,8 @@ class UserViewSet(viewsets.ViewSet):
         data = request.data
         user = User.objects.filter(username=data['username']).first()
         if not user:
-            return Response({'message': 'User not found', 'ok': False}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'message': 'User with that username not found', 'ok': False},
+                            status=status.HTTP_404_NOT_FOUND)
         if check_password(data['password'], user.password):
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
@@ -138,11 +140,11 @@ class UserViewSet(viewsets.ViewSet):
         operation_description="This endpoint allows SuperAdmin or HR to update user information."
     )
     @is_super_admin_or_hr
-    def update_user(self, request, pk=None):
-        if not User.objects.filter(pk=pk).exists():
+    def update_user(self, request, user_id):
+        user = User.objects.filter(pk=user_id, is_deleted=False).first()
+        if not user:
             return Response({'message': 'User not found', 'ok': False}, status=status.HTTP_404_NOT_FOUND)
-        user = User.objects.get(pk=pk)
-        serializer = ChangeUserDetailsSerializer(user, data=request.data, context={'request': request}, partial=True)
+        serializer = ChangeUserDetailsSerializer(user, data=request.data, partial=True)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         serializer.save()
@@ -159,10 +161,10 @@ class UserViewSet(viewsets.ViewSet):
         operation_description="This endpoint allows SuperAdmin or HR to change a user's password."
     )
     @is_super_admin_or_hr
-    def change_user_password(self, request, pk=None):
-        if not User.objects.filter(pk=pk).exists():
+    def change_user_password(self, request, user_id):
+        user = User.objects.filter(pk=user_id, is_deleted=False).first()
+        if not user:
             return Response({'message': 'User not found', 'ok': False}, status=status.HTTP_404_NOT_FOUND)
-        user = User.objects.get(pk=pk)
         serializer = ChangeUserPasswordSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -184,9 +186,53 @@ class UserViewSet(viewsets.ViewSet):
     )
     @is_super_admin_or_hr
     def soft_delete(self, request, user_id):
-        user = User.objects.filter(pk=user_id).first()
+        user = User.objects.filter(pk=user_id, is_deleted=False).first()
         if not user:
             return Response(data={'message': 'User not found', 'ok': False}, status=status.HTTP_404_NOT_FOUND)
         user.is_deleted = True
         user.save(update_fields=['is_deleted'])
         return Response(data={'message': 'User soft deleted successfully', 'ok': True}, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('page', openapi.IN_QUERY, description='Page number', type=openapi.TYPE_INTEGER),
+            openapi.Parameter('size', openapi.IN_QUERY, description='Size', type=openapi.TYPE_INTEGER),
+        ],
+        operation_summary='User Filter',
+        operation_description='User Filter',
+        request_body=UserFilterSerializer(),
+        responses={200: UserSerializer()},
+    )
+    @is_super_admin
+    def filter_users(self, request):
+        page = int(request.query_params.get('page', 1))
+        size = int(request.query_params.get('size', 10))
+
+        serializer = UserFilterSerializer(data=request.query_params)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        role = serializer.validated_data.get('role')
+        kpi = serializer.validated_data.get('kpi')
+        fixed_salary = serializer.validated_data.get('fixed_salary')
+        created_at = serializer.validated_data.get('created_at')
+
+        result = {}
+        if role is not None:
+            result['role'] = role
+        if kpi is not None:
+            result['kpi__gte'] = kpi
+        if fixed_salary is not None:
+            result['fixed_salary__gte'] = fixed_salary
+        if created_at is not None:
+            result['created_at__gte'] = created_at
+
+        users = User.objects.filter(**result)
+
+        paginator = CustomPagination()
+        paginator.page_size = size
+        paginated_users = paginator.paginate_queryset(users, request)
+
+        return paginator.get_paginated_response(
+            data={'result': UserSerializer(paginated_users, many=True).data, 'ok': True}
+        )

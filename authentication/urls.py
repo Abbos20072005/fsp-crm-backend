@@ -9,6 +9,7 @@ urlpatterns = [
     path('password/', UserViewSet.as_view({'put': 'change_password', })),
     path('user/<int:user_id>/',
          UserViewSet.as_view({'patch': 'update_user', 'put': 'change_user_password', 'delete': 'soft_delete'})),
+    path('user/filter/', UserViewSet.as_view({'post': 'filter_users', }))
 ]
 
 """
