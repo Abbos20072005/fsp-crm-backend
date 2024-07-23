@@ -203,8 +203,7 @@ class UserViewSet(viewsets.ViewSet):
         request_body=UserFilterSerializer(),
         responses={200: UserSerializer()},
     )
-
-    #@is_super_admin
+    @is_super_admin
     def filter_users(self, request):
         page = int(request.query_params.get('page', 1))
         size = int(request.query_params.get('size', 10))
@@ -243,13 +242,23 @@ class UserViewSet(viewsets.ViewSet):
         manual_parameters=[
             openapi.Parameter('query', openapi.IN_QUERY, description='Search query for username',
                               type=openapi.TYPE_STRING),
+            openapi.Parameter('page', openapi.IN_QUERY, description='Page number', type=openapi.TYPE_INTEGER),
+            openapi.Parameter('size', openapi.IN_QUERY, description='Size', type=openapi.TYPE_INTEGER),
         ],
         operation_summary='Search Users',
         operation_description='Search users by username.',
         responses={200: UserSerializer(many=True)},
     )
     def search_user(self, request):
-        query = request.GET.get('query', "")
+        page = int(request.query_params.get('page', 1))
+        size = int(request.query_params.get('size', 10))
+        query = request.query_params.get('query', "+")
         users = User.objects.filter(is_deleted=False, username__icontains=query).exclude(role=4)
-        serializer = UserSerializer(users, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        paginator = CustomPagination()
+        paginator.page = page
+        paginator.page_size = size
+        paginated_users = paginator.paginate_queryset(users, request)
+
+        return paginator.get_paginated_response(
+            data={'result': UserSerializer(paginated_users, many=True).data, 'ok': True}
+        )
