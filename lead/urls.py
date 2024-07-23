@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import LeadViewSet, FilteredLeadViewSet
+from .views import LeadViewSet, FilteredLeadViewSet, MyLeadViewSet
 
 urlpatterns = [
     path('create/', LeadViewSet.as_view({'post': 'create'})),
