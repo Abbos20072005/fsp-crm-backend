@@ -8,7 +8,7 @@ urlpatterns = [
     path('filter/status/', FilteredLeadViewSet.as_view({'post': 'check_status'})),
     path('student/', StudentViewSet.as_view({'get': 'list', 'post': 'create'})),
     path('document/type/', DocumentTypeViewSet.as_view({'post': 'create', 'get': 'list'})),
-    path('documents/', StudentDocumentViewSet.as_view({'get': 'list', 'post': 'create'})),
+    path('student/<int:student_id>/upload/', StudentDocumentViewSet.as_view({'get': 'list', 'post': 'create'})),
 ]
 
 """

@@ -111,8 +111,11 @@ class StudentDocumentViewSet(ViewSet):
         responses={201: 'Document created', },
         tags=['Documents']
     )
-    def create(self, request):
-        serializer = StudentDocumentSerializer(data=request.data)
+    def create(self, request, student_id):
+        data = request.data
+        data['student'] = Student.objects.filter(id=student_id).first()
+        print(data)
+        serializer = StudentDocumentSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -148,7 +151,12 @@ class StudentViewSet(ViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(
+        operation_description='Remove and get student documents',
+        responses={200: 'Student documents'},
+        tags=['Student']
+    )
     def list(self, request):
-        data = request.data
-        serializer = StudentSerializer(data, many=True)
+        queryset = Student.objects.all()
+        serializer = StudentSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

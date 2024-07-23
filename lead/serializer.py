@@ -53,4 +53,4 @@ class DocumentTypeSerializer(serializers.ModelSerializer):
 class StudentDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentDocuments
-        fields = ['id', 'document', 'name']
+        fields = ['id', 'document', 'name', 'student']
