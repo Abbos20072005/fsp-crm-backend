@@ -8,6 +8,12 @@ class LeadSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'phone', 'address', 'status', 'created_at']
 
 
+class LeadStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Lead
+        fields = ['status', ]
+
+
 class LeadCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lead
@@ -24,3 +30,9 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lead
         fields = ["admin", "name", "phone", "status", "address"]
+
+
+class LeadFilterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Lead
+        fields = '__all__'

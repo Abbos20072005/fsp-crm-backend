@@ -1,7 +1,10 @@
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
+from .utils import is_valid_token
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -16,6 +19,12 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         validated_data['password'] = make_password(validated_data['password'])
         user = User.objects.create(**validated_data)
         return user
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'role', 'kpi', 'fixed_salary', 'created_at']
 
 
 class ChangePasswordSerializer(serializers.Serializer):
@@ -34,13 +43,18 @@ class ChangeUserDetailsSerializer(serializers.ModelSerializer):
             'fixed_salary': {'required': False},
         }
 
-    def validate(self, attrs):
-        role = self.context['request'].user.role
-        if role == 'HR' and 'role' in attrs:
-            if attrs['role'] != 'Admin':
-                raise serializers.ValidationError("HR can only assign 'Admin' role.")
-        return attrs
-
 
 class ChangeUserPasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField(write_only=True)
+
+
+class LogoutSerializer(serializers.Serializer):
+    refresh_token = serializers.CharField(required=True)
+
+    def validate_refresh_token(self, value):
+        if not is_valid_token(value):
+            raise serializers.ValidationError('Token is invalid or expired')
+        blacklisted_token = BlacklistedToken.objects.filter(token__token=value).exists()
+        if blacklisted_token:
+            raise serializers.ValidationError('Token is already in blacklist')
+        return value
