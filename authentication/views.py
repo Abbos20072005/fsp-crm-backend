@@ -62,7 +62,8 @@ class UserViewSet(viewsets.ViewSet):
         data = request.data
         user = User.objects.filter(username=data['username']).first()
         if not user:
-            return Response({'message': 'User not found', 'ok': False}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'message': 'User with that username not found', 'ok': False},
+                            status=status.HTTP_404_NOT_FOUND)
         if check_password(data['password'], user.password):
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
@@ -138,11 +139,11 @@ class UserViewSet(viewsets.ViewSet):
         operation_description="This endpoint allows SuperAdmin or HR to update user information."
     )
     @is_super_admin_or_hr
-    def update_user(self, request, pk=None):
-        if not User.objects.filter(pk=pk).exists():
+    def update_user(self, request, user_id):
+        user = User.objects.filter(pk=user_id, is_deleted=False).first()
+        if not user:
             return Response({'message': 'User not found', 'ok': False}, status=status.HTTP_404_NOT_FOUND)
-        user = User.objects.get(pk=pk)
-        serializer = ChangeUserDetailsSerializer(user, data=request.data, context={'request': request}, partial=True)
+        serializer = ChangeUserDetailsSerializer(user, data=request.data, partial=True)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         serializer.save()
@@ -159,10 +160,10 @@ class UserViewSet(viewsets.ViewSet):
         operation_description="This endpoint allows SuperAdmin or HR to change a user's password."
     )
     @is_super_admin_or_hr
-    def change_user_password(self, request, pk=None):
-        if not User.objects.filter(pk=pk).exists():
+    def change_user_password(self, request, user_id):
+        user = User.objects.filter(pk=user_id, is_deleted=False).first()
+        if not user:
             return Response({'message': 'User not found', 'ok': False}, status=status.HTTP_404_NOT_FOUND)
-        user = User.objects.get(pk=pk)
         serializer = ChangeUserPasswordSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
