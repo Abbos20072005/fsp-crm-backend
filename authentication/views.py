@@ -230,6 +230,32 @@ class UserViewSet(viewsets.ViewSet):
         users = User.objects.filter(**result)
 
         paginator = CustomPagination()
+        paginator.page = page
+        paginator.page_size = size
+        paginated_users = paginator.paginate_queryset(users, request)
+
+        return paginator.get_paginated_response(
+            data={'result': UserSerializer(paginated_users, many=True).data, 'ok': True}
+        )
+
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('query', openapi.IN_QUERY, description='Search query for username',
+                              type=openapi.TYPE_STRING),
+            openapi.Parameter('page', openapi.IN_QUERY, description='Page number', type=openapi.TYPE_INTEGER),
+            openapi.Parameter('size', openapi.IN_QUERY, description='Size', type=openapi.TYPE_INTEGER),
+        ],
+        operation_summary='Search Users',
+        operation_description='Search users by username.',
+        responses={200: UserSerializer(many=True)},
+    )
+    def search_user(self, request):
+        page = int(request.query_params.get('page', 1))
+        size = int(request.query_params.get('size', 10))
+        query = request.query_params.get('query', "+")
+        users = User.objects.filter(is_deleted=False, username__icontains=query).exclude(role=4)
+        paginator = CustomPagination()
+        paginator.page = page
         paginator.page_size = size
         paginated_users = paginator.paginate_queryset(users, request)
 
