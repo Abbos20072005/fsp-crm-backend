@@ -6,6 +6,8 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from authentication.models import User
 from core.custom_pagination import CustomPagination
+from exceptions.error_codes import ErrorCodes
+from exceptions.exception import CustomApiException
 from .serializers import UserSerializer, UserRegisterSerializer, ChangePasswordSerializer, \
     ChangeUserPasswordSerializer, ChangeUserDetailsSerializer, LogoutSerializer, UserFilterSerializer
 from drf_yasg import openapi
@@ -63,8 +65,7 @@ class UserViewSet(viewsets.ViewSet):
         data = request.data
         user = User.objects.filter(username=data['username']).first()
         if not user:
-            return Response({'message': 'User with that username not found', 'ok': False},
-                            status=status.HTTP_404_NOT_FOUND)
+            raise CustomApiException(error_code=ErrorCodes.USER_DOES_NOT_EXIST.value)
         if check_password(data['password'], user.password):
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
@@ -143,12 +144,12 @@ class UserViewSet(viewsets.ViewSet):
     def update_user(self, request, user_id):
         user = User.objects.filter(pk=user_id, is_deleted=False).first()
         if not user:
-            return Response({'message': 'User not found', 'ok': False}, status=status.HTTP_404_NOT_FOUND)
+            raise CustomApiException(error_code=ErrorCodes.USER_DOES_NOT_EXIST.value)
         serializer = ChangeUserDetailsSerializer(user, data=request.data, partial=True)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         serializer.save()
-        return Response({'message': 'User details successfully updated', 'ok': True}, status=status.HTTP_200_OK)
+        return Response(data={'message': 'User details successfully updated', 'ok': True}, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         request_body=ChangeUserPasswordSerializer,
@@ -157,21 +158,21 @@ class UserViewSet(viewsets.ViewSet):
             400: 'Invalid data',
             404: 'User not found'
         },
-        operation_summary="Change user password (Admin)",
+        operation_summary="Change user password by HR and SuperAdmin",
         operation_description="This endpoint allows SuperAdmin or HR to change a user's password."
     )
     @is_super_admin_or_hr
     def change_user_password(self, request, user_id):
         user = User.objects.filter(pk=user_id, is_deleted=False).first()
         if not user:
-            return Response({'message': 'User not found', 'ok': False}, status=status.HTTP_404_NOT_FOUND)
+            raise CustomApiException(error_code=ErrorCodes.USER_DOES_NOT_EXIST.value)
         serializer = ChangeUserPasswordSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         new_password = serializer.validated_data.get('new_password')
         user.set_password(new_password)
         user.save()
-        return Response({'message': 'Password successfully changed', 'ok': True}, status=status.HTTP_200_OK)
+        return Response(data={'message': 'Password successfully changed', 'ok': True}, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         manual_parameters=[
@@ -188,7 +189,7 @@ class UserViewSet(viewsets.ViewSet):
     def soft_delete(self, request, user_id):
         user = User.objects.filter(pk=user_id, is_deleted=False).first()
         if not user:
-            return Response(data={'message': 'User not found', 'ok': False}, status=status.HTTP_404_NOT_FOUND)
+            raise CustomApiException(error_code=ErrorCodes.USER_DOES_NOT_EXIST.value)
         user.is_deleted = True
         user.save(update_fields=['is_deleted'])
         return Response(data={'message': 'User soft deleted successfully', 'ok': True}, status=status.HTTP_200_OK)
