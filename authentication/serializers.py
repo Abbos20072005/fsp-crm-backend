@@ -2,8 +2,9 @@ from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
-from .models import User
-from .utils import is_valid_token
+
+from .models import User, BlacklistedAccessToken
+from .utils import is_valid_tokens
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -49,14 +50,19 @@ class ChangeUserPasswordSerializer(serializers.Serializer):
 
 class LogoutSerializer(serializers.Serializer):
     refresh_token = serializers.CharField(required=True)
+    access_token = serializers.CharField(required=True)
 
-    def validate_refresh_token(self, value):
-        if not is_valid_token(value):
-            raise serializers.ValidationError('Token is invalid or expired')
-        blacklisted_token = BlacklistedToken.objects.filter(token__token=value).exists()
-        if blacklisted_token:
-            raise serializers.ValidationError('Token is already in blacklist')
-        return value
+    def validate(self, data):
+        refresh_token = data.get('refresh_token')
+        access_token = data.get('access_token')
+        if not is_valid_tokens(refresh_token, access_token):
+            raise serializers.ValidationError('Access token or Refresh token is invalid or expired')
+        refresh_blacklisted = BlacklistedToken.objects.filter(token__token=refresh_token).exists()
+        access_blacklisted = BlacklistedAccessToken.objects.filter(token=access_token).exists()
+
+        if refresh_blacklisted or access_blacklisted:
+            raise serializers.ValidationError('Tokens are already in blacklist')
+        return data
 
 
 class UserFilterSerializer(serializers.Serializer):
