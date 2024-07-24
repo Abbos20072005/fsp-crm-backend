@@ -20,6 +20,13 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         user = User.objects.create(**validated_data)
         return user
 
+    def validate(self, data):
+        request = self.context.get('request')
+        role = data.get('role', None)
+        if request.user.role == 3 and role == 4:
+            raise ValidationError({"message": "Allowed roles for HR to create: 1, 2, 3."})
+        return data
+
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
