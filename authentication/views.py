@@ -3,8 +3,8 @@ from drf_yasg.utils import swagger_auto_schema
 from django.contrib.auth.hashers import check_password
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
-from authentication.models import User
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
+from authentication.models import User, BlacklistedAccessToken
 from core.custom_pagination import CustomPagination
 from exceptions.error_codes import ErrorCodes
 from exceptions.exception import CustomApiException
@@ -76,7 +76,8 @@ class UserViewSet(viewsets.ViewSet):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                'refresh_token': openapi.Schema(type=openapi.TYPE_STRING, description='Refresh token')
+                'refresh_token': openapi.Schema(type=openapi.TYPE_STRING, description='Refresh token'),
+                'access_token': openapi.Schema(type=openapi.TYPE_STRING, description='Access_token')
             }
         ),
         responses={
@@ -89,13 +90,17 @@ class UserViewSet(viewsets.ViewSet):
     @is_employee
     def logout(self, request):
         serializer = LogoutSerializer(data=request.data)
-        if serializer.is_valid():
-            refresh_token = serializer.validated_data['refresh_token']
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-            return Response({'message': 'Token has been added to blacklist', 'ok': True},
-                            status=status.HTTP_205_RESET_CONTENT)
-        return Response({'error': serializer.errors, 'ok': False}, status=status.HTTP_400_BAD_REQUEST)
+        if not serializer.is_valid():
+            return Response({'error': serializer.errors, 'ok': False}, status=status.HTTP_400_BAD_REQUEST)
+        refresh_token = serializer.validated_data['refresh_token']
+        access_token = serializer.validated_data['access_token']
+        token1 = RefreshToken(refresh_token)
+        token2 = AccessToken(access_token)
+        token1.blacklist()
+        obj = BlacklistedAccessToken.objects.create(token=token2)
+        obj.save()
+        return Response({'message': 'Token has been added to blacklist', 'ok': True},
+                        status=status.HTTP_205_RESET_CONTENT)
 
     @swagger_auto_schema(
         request_body=ChangePasswordSerializer,
