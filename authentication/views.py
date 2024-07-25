@@ -207,7 +207,7 @@ class UserViewSet(viewsets.ViewSet):
         ],
         operation_summary='User Filter',
         operation_description='User Filter',
-        request_body=UserFilterSerializer(),
+        request_body=UserFilterSerializer,
         responses={200: UserSerializer()},
     )
     @is_super_admin
