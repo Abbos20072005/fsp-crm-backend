@@ -1,15 +1,29 @@
+from datetime import date, datetime
+
 from django.core.paginator import Paginator
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework import status
 
 from authentication.models import User
 from .models import Lead, Comment
+
+from authentication.models import User
+from .models import Lead
 from .permissions import check_role
 from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, \
     CommentCreateSerializer, CommentListSerializer, BulkUpdateAdminSerializer
+from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, CommentSerializer, \
+    LeadStatusSerializer, MyLeadSerializer
+
+from django.db.models import Q, Sum, Count, Case, When, IntegerField
+from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, LeadFilterSerializer
+from accounting.models import Check, ExpenditureStaff
+from core.BasePermissions import is_super_admin_or_hr, is_admin_or_super_admin
 
 
 class LeadViewSet(ViewSet):
@@ -172,3 +186,84 @@ class CommentViewSet(ViewSet):
             return Response({'success': f'{updated_count} leads updated successfully'})
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LeadStatsViewSet(ViewSet):
+    @swagger_auto_schema(
+        operation_description="Admin Dashboard",
+        operation_summary="Admin Dashboard",
+        manual_parameters=[
+            openapi.Parameter('salary_month', type=openapi.TYPE_STRING, in_=openapi.IN_QUERY),
+            openapi.Parameter('salary_year', type=openapi.TYPE_STRING, in_=openapi.IN_QUERY),
+        ],
+        responses={200: "Information returns"},
+        tags=['admin_dashboard']
+    )
+    @is_admin_or_super_admin
+    def my_salary(self, request, *args, **kwargs):
+        user = request.user
+        salary_month = request.GET.get('salary_month')
+        salary_year = request.GET.get('salary_year')
+
+        if salary_year or salary_month:
+            data = self.salary_calculation(user.id, year=salary_year, month=salary_month)
+        else:
+            data = self.salary_calculation(user.id, year=datetime.year, month=datetime.month)
+        return Response(data, status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        operation_description="Admin Dashboard",
+        operation_summary="Admin Dashboard",
+        manual_parameters=[
+            openapi.Parameter('lead_year', type=openapi.TYPE_STRING, in_=openapi.IN_QUERY),
+            openapi.Parameter('lead_month', type=openapi.TYPE_STRING, in_=openapi.IN_QUERY),
+        ],
+        responses={200: MyLeadSerializer()},
+        tags=['admin_dashboard']
+    )
+    @is_admin_or_super_admin
+    def my_leads(self, request, *args, **kwargs):
+        user = request.user
+        lead_year = request.GET.get('lead_year')
+        lead_month = request.GET.get('lead_month')
+        if lead_year or lead_month:
+            filter_query = Q()
+            if lead_year:
+                filter_query &= Q(created_at__year=lead_year)
+            if lead_month:
+                filter_query &= Q(created_at__month=lead_month)
+            leads = Lead.objects.filter(admin=user).filter(filter_query)
+        else:
+            leads = Lead.objects.filter(admin=user)
+        leads_stats = leads.aggregate(
+            total=Count('id'),
+            interested_leads=Count(Case(When(status=1, then=1), output_field=IntegerField())),
+            possible_leads=Count(Case(When(status=2, then=1), output_field=IntegerField())),
+            joined_leads=Count(Case(When(status=3, then=1), output_field=IntegerField())),
+            canceled_leads=Count(Case(When(status=4, then=1), output_field=IntegerField()))
+        )
+        serializer = MyLeadSerializer(leads, context={"total": leads_stats['total'],
+                                                      "interested_leads": leads_stats['interested_leads'],
+                                                      "possible_leads": leads_stats['possible_leads'],
+                                                      "joined_leads": leads_stats['joined_leads'],
+                                                      "canceled_leads": leads_stats['canceled_leads']})
+        return Response(serializer.data, status.HTTP_200_OK)
+
+    def salary_calculation(self, pk, year=None, month=None):
+        admin = User.objects.filter(id=pk, is_deleted=False).first()
+        filter_query = Q()
+        if year:
+            filter_query &= Q(created_at__year=year)
+        if month:
+            filter_query &= Q(created_at__month=month)
+        kpi_from_check = Check.objects.filter(uploaded_by=pk).filter(filter_query).count()
+        expenditure = ExpenditureStaff.objects.filter(user_id=pk, is_deleted=False).order_by('-created_at')
+        minus = expenditure.values('amount').distinct().aggregate(total_amount=Sum('amount'))['total_amount'] or 0
+        data = {
+            'student_quantity': kpi_from_check,
+            'kpi_amount': kpi_from_check * admin.kpi,
+            'fixed_salary': admin.fixed_salary,
+            'fine': minus,
+            'salary_this_month': kpi_from_check * admin.kpi + admin.fixed_salary - minus
+        }
+        return data

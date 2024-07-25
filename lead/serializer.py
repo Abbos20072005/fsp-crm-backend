@@ -67,3 +67,19 @@ class BulkUpdateAdminSerializer(serializers.Serializer):
         if not User.objects.filter(id=value).exists():
             raise serializers.ValidationError('New admin not found.')
         return value
+
+
+class MyLeadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Lead
+        fields = ('id', 'name', 'phone', 'status', 'address', 'admin', 'created_at')
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['comments'] = CommentSerializer(Comment.objects.filter(lead=data['id']), many=True).data
+        data['total'] = self.context.get('total', None)
+        data['interested_leads'] = self.context.get('interested_leads', None)
+        data['possible_leads'] = self.context.get('possible_leads', None)
+        data['joined_leads'] = self.context.get('joined_leads', None)
+        data['canceled_leads'] = self.context.get('canceled_leads', None)
+        return data
