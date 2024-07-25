@@ -3,27 +3,26 @@ from .views import (CheckViewSet, OutcomeTypeViewSet, OutcomeViewSet, OutcomeFil
                     CheckFilterViewSet, AdminCheckFilterViewSet, AdminSalaryViewSet, CheckAmountViewSet)
 
 urlpatterns = [
-    path('checks/<int:pk>/',
-         CheckViewSet.as_view({'get': 'retrieve', 'delete': 'destroy', 'put': 'update', 'patch': 'confirm_check'})),
-    path('student/<int:pk>/checks/', CheckViewSet.as_view({'get': 'student_checks'})),
+    path('check/<int:check_id>/',
+         CheckViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'confirm_check'})),
     path('checks/', CheckViewSet.as_view({'get': 'list', 'post': 'create'})),
 
-    path('outcome-type/<int:pk>/',
-         OutcomeTypeViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'})),
+    path('outcome-type/<int:outcome_type_id>/',
+         OutcomeTypeViewSet.as_view({'get': 'retrieve', 'patch': 'update'})),
     path('outcome-types/', OutcomeTypeViewSet.as_view({'get': 'list', 'post': 'create'})),
 
-    path('outcome/<int:pk>/', OutcomeViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'})),
+    path('outcome/<int:outcome_id>/', OutcomeViewSet.as_view({'get': 'retrieve', 'patch': 'update'})),
     path('outcomes/', OutcomeViewSet.as_view({'get': 'list', 'post': 'create'})),
 
     path('outcome/filter/', OutcomeFilterViewSet.as_view({'get': 'outcome_filter'})),
 
-    path('expenditure-staff/<int:pk>/',
-         ExpenditureStaffViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'})),
-    path('expenditure/', ExpenditureStaffViewSet.as_view({'get': 'list', 'post': 'create'})),
+    path('expenditure-staff/<int:expenditure_staff_id>/',
+         ExpenditureStaffViewSet.as_view({'get': 'retrieve', 'patch': 'update'})),
+    path('expenditure-staff/', ExpenditureStaffViewSet.as_view({'get': 'list', 'post': 'create'})),
 
     path('check/filter/', CheckFilterViewSet.as_view({'get': 'check_filter'})),
     path('admin-check/filter/', AdminCheckFilterViewSet.as_view({'get': 'check_by_admin_filter'})),
-    path('salary/<int:pk>/', AdminSalaryViewSet.as_view({'get': 'get_salary'})),
+    path('salary/<int:user_id>/', AdminSalaryViewSet.as_view({'get': 'get_salary'})),
     path('checks-amount/', CheckAmountViewSet.as_view({'get': 'get_check'})),
 ]
 
@@ -31,10 +30,9 @@ urlpatterns = [
 /outcome - CR   +
 /outcome/filter - type/fromToDate... +
 /salary - list of admins with salaries      
-/staff/:id - Retrieve
+/staff/:id - Retrieve    
 /check :id - RetrieveUpdate   +
 /check/:leadId - list of checks by leadId   +
-check_by_admin_filter
 
 
 """

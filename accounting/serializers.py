@@ -4,7 +4,6 @@ from authentication.models import User
 
 
 class CheckSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Check
@@ -16,7 +15,6 @@ class CheckSerializer(serializers.ModelSerializer):
 
 
 class OutcomeTypeSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = OutcomeType
@@ -24,7 +22,6 @@ class OutcomeTypeSerializer(serializers.ModelSerializer):
 
 
 class OutcomeSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Outcome
@@ -66,7 +63,6 @@ class SalarySerializer(serializers.ModelSerializer):
 
 
 class ExpenditureStaffSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = ExpenditureStaff

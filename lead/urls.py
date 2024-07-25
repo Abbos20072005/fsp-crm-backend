@@ -7,6 +7,8 @@ urlpatterns = [
     path('filter/', FilteredLeadViewSet.as_view({'get': 'list'})),
     path('filter/status/', FilteredLeadViewSet.as_view({'post': 'check_status'})),
     path('admin_dash/', MyLeadViewSet.as_view({"get": "my_leads"})),
+    path('<int:lead_id>/', LeadViewSet.as_view({'put': 'update', 'delete': 'soft_delete'})),
+    path('search/', LeadViewSet.as_view({'get': 'search_lead'})),
 ]
 
 """
