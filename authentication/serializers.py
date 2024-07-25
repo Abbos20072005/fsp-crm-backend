@@ -50,9 +50,26 @@ class ChangeUserDetailsSerializer(serializers.ModelSerializer):
             'fixed_salary': {'required': False},
         }
 
+    def validate(self, data):
+        user = User.objects.get(user_id=self.context.get('user_id'))
+        request = self.context.get('request')
+        if request.user.role == 3 and user.role == 4:
+            raise ValidationError({'You are not allowed to change details of this user'})
+        role = data.get('role', None)
+        if request.user.role == 3 and role == 4:
+            raise ValidationError({'You are not allowed promote to super admin'})
+        return data
+
 
 class ChangeUserPasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        user = User.objects.get(user_id=self.context.get('user_id'))
+        request = self.context.get('request')
+        if request.user.role == 3 and user.role == 4:
+            raise ValidationError({'You are not allowed to change details of this user'})
+        return data
 
 
 class LogoutSerializer(serializers.Serializer):

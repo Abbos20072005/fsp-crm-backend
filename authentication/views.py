@@ -33,7 +33,7 @@ class UserViewSet(viewsets.ViewSet):
     )
     @is_super_admin_or_hr
     def register(self, request):
-        serializer = UserRegisterSerializer(data=request.data,context={'request': request})
+        serializer = UserRegisterSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -150,7 +150,8 @@ class UserViewSet(viewsets.ViewSet):
         user = User.objects.filter(pk=user_id, is_deleted=False).first()
         if not user:
             raise CustomApiException(error_code=ErrorCodes.USER_DOES_NOT_EXIST.value)
-        serializer = ChangeUserDetailsSerializer(user, data=request.data, partial=True)
+        serializer = ChangeUserDetailsSerializer(user, data=request.data, partial=True,
+                                                 context={'request': request, 'user_id': user_id})
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         serializer.save()
@@ -171,7 +172,7 @@ class UserViewSet(viewsets.ViewSet):
         user = User.objects.filter(pk=user_id, is_deleted=False).first()
         if not user:
             raise CustomApiException(error_code=ErrorCodes.USER_DOES_NOT_EXIST.value)
-        serializer = ChangeUserPasswordSerializer(data=request.data)
+        serializer = ChangeUserPasswordSerializer(data=request.data, context={'request': request, 'user_id': user_id})
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         new_password = serializer.validated_data.get('new_password')
