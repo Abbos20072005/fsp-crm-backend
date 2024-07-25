@@ -76,7 +76,7 @@ class MyLeadSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        data['comments'] = CommentSerializer(Comment.objects.filter(lead=data['id']), many=True).data
+        data['comments'] = CommentListSerializer(Comment.objects.filter(lead=data['id']), many=True).data
         data['total'] = self.context.get('total', None)
         data['interested_leads'] = self.context.get('interested_leads', None)
         data['possible_leads'] = self.context.get('possible_leads', None)
