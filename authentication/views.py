@@ -91,7 +91,7 @@ class UserViewSet(viewsets.ViewSet):
     def logout(self, request):
         serializer = LogoutSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response({'error': serializer.errors, 'ok': False}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(data={'error': serializer.errors, 'ok': False}, status=status.HTTP_400_BAD_REQUEST)
         refresh_token = serializer.validated_data['refresh_token']
         access_token = serializer.validated_data['access_token']
         token1 = RefreshToken(refresh_token)
@@ -99,7 +99,7 @@ class UserViewSet(viewsets.ViewSet):
         token1.blacklist()
         obj = BlacklistedAccessToken.objects.create(token=token2)
         obj.save()
-        return Response({'message': 'Token has been added to blacklist', 'ok': True},
+        return Response(data={'message': 'Token has been added to blacklist', 'ok': True},
                         status=status.HTTP_205_RESET_CONTENT)
 
     @swagger_auto_schema(
