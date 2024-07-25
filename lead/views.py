@@ -17,8 +17,7 @@ from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializ
 
 from django.db.models import Q, Sum
 from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, LeadFilterSerializer
-from accounting.models import Salary, Check, ExpenditureStaff
-from accounting.serializers import SalarySerializer
+from accounting.models import Check, ExpenditureStaff
 
 
 class LeadViewSet(ViewSet):
