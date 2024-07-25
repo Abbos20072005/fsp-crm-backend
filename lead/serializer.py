@@ -47,4 +47,8 @@ class MyLeadSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         data['comments'] = CommentSerializer(Comment.objects.filter(lead=data['id']), many=True).data
         data['total'] = self.context.get('total', None)
+        data['interested_leads'] = self.context.get('interested_leads', None)
+        data['possible_leads'] = self.context.get('possible_leads', None)
+        data['joined_leads'] = self.context.get('joined_leads', None)
+        data['canceled_leads'] = self.context.get('canceled_leads', None)
         return data
