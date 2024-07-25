@@ -1,14 +1,18 @@
 from django.contrib import admin
-from .models import Lead, Student
+from .models import Lead, Student, Comment
 
 
+@admin.register(Lead)
 class AdminLead(admin.ModelAdmin):
     list_display = ['name', 'is_deleted']
 
 
+@admin.register(Student)
 class AdminStudent(admin.ModelAdmin):
     list_display = ['full_name']
 
 
-admin.site.register(Lead, AdminLead)
-admin.site.register(Student, AdminStudent)
+@admin.register(Comment)
+class AdminComment(admin.ModelAdmin):
+    list_display = ['comment']
+    list_display_links = ['id', 'comment']
