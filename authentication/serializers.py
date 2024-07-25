@@ -24,7 +24,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         role = data.get('role', None)
         if request.user.role == 3 and role == 4:
-            raise ValidationError({"message": "Allowed roles for HR to create: 1, 2, 3."})
+            raise ValidationError({"message": "Allowed roles for HR to create: 1, 2, 3."}, code=400)
         return data
 
 
@@ -54,10 +54,10 @@ class ChangeUserDetailsSerializer(serializers.ModelSerializer):
         user = User.objects.get(pk=self.context.get('user_id'))
         request = self.context.get('request')
         if request.user.role == 3 and user.role == 4:
-            raise ValidationError({'You are not allowed to change details of this user'})
+            raise ValidationError({'You are not allowed to change details of this user'}, code=403)
         role = data.get('role', None)
         if request.user.role == 3 and role == 4:
-            raise ValidationError({'You are not allowed promote to super admin'})
+            raise ValidationError({'You are not allowed promote to super admin'}, code=403)
         return data
 
 
@@ -68,7 +68,7 @@ class ChangeUserPasswordSerializer(serializers.Serializer):
         user = User.objects.get(pk=self.context.get('user_id'))
         request = self.context.get('request')
         if request.user.role == 3 and user.role == 4:
-            raise ValidationError({'You are not allowed to change details of this user'})
+            raise ValidationError({'You are not allowed to change details of this user'}, code=403)
         return data
 
 
@@ -85,7 +85,7 @@ class LogoutSerializer(serializers.Serializer):
         access_blacklisted = BlacklistedAccessToken.objects.filter(token=access_token).exists()
 
         if refresh_blacklisted or access_blacklisted:
-            raise serializers.ValidationError('Tokens are already in blacklist')
+            raise serializers.ValidationError('Tokens are already in blacklist', code=400)
         return data
 
 
@@ -97,5 +97,5 @@ class UserFilterSerializer(serializers.Serializer):
     def validate(self, data):
         role = data.get('role', None)
         if role is not None and role not in [1, 2, 3]:
-            raise ValidationError({"role": "Role must be one of the following values: 1, 2, 3."})
+            raise ValidationError({"role": "Role must be one of the following values: 1, 2, 3."}, code=400)
         return data

@@ -4,14 +4,14 @@ from .views import (CheckViewSet, OutcomeTypeViewSet, OutcomeViewSet, OutcomeFil
 
 urlpatterns = [
     path('check/<int:check_id>/',
-         CheckViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'confirm_check'})),
-    path('checks/', CheckViewSet.as_view({'get': 'list', 'post': 'create'})),
+         CheckViewSet.as_view({'patch': 'confirm_check'})),
+    path('checks/', CheckViewSet.as_view({'post': 'create'})),
 
     path('outcome-type/<int:outcome_type_id>/',
-         OutcomeTypeViewSet.as_view({'get': 'retrieve', 'patch': 'update'})),
+         OutcomeTypeViewSet.as_view({'patch': 'update'})),
     path('outcome-types/', OutcomeTypeViewSet.as_view({'get': 'list', 'post': 'create'})),
 
-    path('outcome/<int:outcome_id>/', OutcomeViewSet.as_view({'get': 'retrieve', 'patch': 'update'})),
+    path('outcome/<int:outcome_id>/', OutcomeViewSet.as_view({'get': 'retrieve'})),
     path('outcomes/', OutcomeViewSet.as_view({'get': 'list', 'post': 'create'})),
 
     path('outcome/filter/', OutcomeFilterViewSet.as_view({'get': 'outcome_filter'})),

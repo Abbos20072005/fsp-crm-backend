@@ -10,8 +10,13 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from authentication.models import User
+from .models import Lead, Comment
+
+from authentication.models import User
 from .models import Lead
 from .permissions import check_role
+from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, \
+    CommentCreateSerializer, CommentListSerializer, BulkUpdateAdminSerializer
 from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, CommentSerializer, \
     LeadStatusSerializer, MyLeadSerializer
 
@@ -22,6 +27,17 @@ from core.BasePermissions import is_super_admin_or_hr, is_admin_or_super_admin
 
 
 class LeadViewSet(ViewSet):
+    @swagger_auto_schema(
+        operation_description='List of Leads',
+        operation_summary='List of Leads',
+        responses={200: "List of Leads"},
+    )
+    @check_role
+    def list(self, request, leads, *args, **kwargs):
+        # Serialize the leads and return the response
+        serializer = LeadSerializer(leads, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     @swagger_auto_schema(
         operation_description='Filter Leads',
         operation_summary='Filter Leads',
@@ -86,7 +102,7 @@ class LeadViewSet(ViewSet):
         responses={200: 'Lead updated'},
     )
     def update(self, request, lead_id):
-        lead = Lead.objects.filter(pk=lead_id).first()
+        lead = Lead.objects.filter(pk=lead_id, is_deleted=False).first()
         if not lead:
             return Response(data={"message": "Lead not found", "ok": False}, status=status.HTTP_404_NOT_FOUND)
         data = request.data
@@ -97,9 +113,12 @@ class LeadViewSet(ViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('lead_id', openapi.IN_QUERY, type=openapi.TYPE_INTEGER, description='Lead id'),
+
+        ],
         operation_description='Delete a Lead',
         operation_summary='Delete a Lead',
-        request_body=LeadCreateSerializer,
         responses={200: 'Lead deleted'},
     )
     def soft_delete(self, request, lead_id):
@@ -120,10 +139,53 @@ class LeadViewSet(ViewSet):
         responses={200: LeadSerializer(many=True)},
     )
     def search_lead(self, request):
-        query = request.GET.get('query', "")
+        query = request.query_params.get('query', '')
         leads = Lead.objects.filter(is_deleted=False, name__icontains=query)
         serializer = LeadSerializer(leads, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class CommentViewSet(ViewSet):
+    @swagger_auto_schema(
+        operation_description='Create a Comment',
+        operation_summary='Create a Comment',
+        request_body=CommentCreateSerializer,
+        responses={201: 'Comment created'},
+    )
+    def create(self, request, lead_id):
+        data = request.data
+        serializer = CommentCreateSerializer(data=data, context={'request': request, 'lead_id': lead_id})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        operation_description='List a Comments',
+        operation_summary='List a Comments',
+        responses={200: 'Comment list'},
+    )
+    def list(self, request, lead_id):
+        author_id = request.user.id
+        comments = Comment.objects.filter(is_deleted=False, lead_id=lead_id, author_id=author_id)
+        serializer = CommentListSerializer(comments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def bulk_update_admin(self, request):
+        serializer = BulkUpdateAdminSerializer(data=request.data)
+        if serializer.is_valid():
+            lead_ids = serializer.validated_data['lead_ids']
+            new_admin_id = serializer.validated_data['new_admin_id']
+
+            # Retrieve the new admin
+            new_admin = User.objects.get(pk=new_admin_id)
+
+            # Update the leads
+            updated_count = Lead.objects.filter(id__in=lead_ids).update(admin=new_admin)
+
+            return Response({'success': f'{updated_count} leads updated successfully'})
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LeadStatsViewSet(ViewSet):
