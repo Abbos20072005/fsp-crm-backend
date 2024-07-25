@@ -1,3 +1,5 @@
+from datetime import date, datetime
+
 from django.core.paginator import Paginator
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -6,13 +8,17 @@ from drf_yasg import openapi
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework import status
+
+from authentication.models import User
 from .models import Lead
 from .permissions import check_role
 from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, CommentSerializer, \
     LeadStatusSerializer, MyLeadSerializer
 
-from django.db.models import Q
+from django.db.models import Q, Sum
 from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, LeadFilterSerializer
+from accounting.models import Salary, Check, ExpenditureStaff
+from accounting.serializers import SalarySerializer
 
 
 class LeadViewSet(ViewSet):
@@ -127,6 +133,7 @@ class MyLeadViewSet(ViewSet):
         manual_parameters=[
             openapi.Parameter('start_date', type=openapi.TYPE_STRING, in_=openapi.IN_QUERY),
             openapi.Parameter('end_date', type=openapi.TYPE_STRING, in_=openapi.IN_QUERY),
+            openapi.Parameter('lead_status', type=openapi.TYPE_STRING, in_=openapi.IN_QUERY),
         ],
         responses={200: MyLeadSerializer()},
         tags=['admin_dashboard']
@@ -137,7 +144,7 @@ class MyLeadViewSet(ViewSet):
         if user.is_authenticated:
             start_date = request.GET.get('start_date')
             end_date = request.GET.get('end_date')
-
+            lead_status = request.GET.get('lead_status')
             if start_date or end_date:
                 filter_query = Q(admin=user)
 
@@ -146,6 +153,9 @@ class MyLeadViewSet(ViewSet):
 
                 if end_date:
                     filter_query &= Q(created_at__lte=end_date)
+
+                if lead_status:
+                    filter_query &= Q(status=lead_status)
 
                 my_leads = Lead.objects.filter(filter_query)
 
@@ -156,3 +166,44 @@ class MyLeadViewSet(ViewSet):
             serializer = MyLeadSerializer(my_leads, many=True, context={"total": total})
             return Response(serializer.data, status.HTTP_200_OK)
         return Response({"error": "user is not authenticated"}, status.HTTP_401_UNAUTHORIZED)
+
+    @swagger_auto_schema(
+        operation_description="Admin Dashboard",
+        operation_summary="Admin Dashboard",
+        manual_parameters=[
+            openapi.Parameter('salary_month', type=openapi.TYPE_STRING, in_=openapi.IN_QUERY),
+            openapi.Parameter('salary_year', type=openapi.TYPE_STRING, in_=openapi.IN_QUERY),
+        ],
+        responses={200: "Information returns"},
+        tags=['admin_dashboard']
+    )
+    def my_salary(self, request, *args, **kwargs):
+        user = request.user
+        if user.is_authenticated:
+            salary_month = request.GET.get('salary_month')
+            salary_year = request.GET.get('salary_year')
+            if salary_year or salary_month:
+                data = self.salary_calculation(user.id, year=salary_year, month=salary_month)
+            else:
+                date = self.salary_calculation(user.id, year=datetime.year, month=datetime.month)
+            return Response(data, status.HTTP_200_OK)
+        return Response({"error": "user is not authenticated"}, status.HTTP_401_UNAUTHORIZED)
+
+    def salary_calculation(self, pk, year=None, month=None):
+        admin = User.objects.filter(id=pk, is_deleted=False).first()
+        filter_query = Q()
+        if year:
+            filter_query &= Q(created_at__year=year)
+        if month:
+            filter_query &= Q(created_at__month=month)
+        kpi_from_check = Check.objects.filter(uploaded_by=pk).filter(filter_query).count()
+        expenditure = ExpenditureStaff.objects.filter(user_id=pk, is_deleted=False).order_by('-created_at')
+        minus = expenditure.values('amount').distinct().aggregate(total_amount=Sum('amount'))['total_amount'] or 0
+        data = {
+            'student_quantity': kpi_from_check,
+            'kpi_amount': kpi_from_check * admin.kpi,
+            'fixed_salary': admin.fixed_salary,
+            'fine': minus,
+            'salary_this_month': kpi_from_check * admin.kpi + admin.fixed_salary - minus
+        }
+        return data
