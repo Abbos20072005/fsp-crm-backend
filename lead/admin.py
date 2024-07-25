@@ -14,5 +14,5 @@ class AdminStudent(admin.ModelAdmin):
 
 @admin.register(Comment)
 class AdminComment(admin.ModelAdmin):
-    list_display = ['comment']
+    list_display = ['id', 'comment']
     list_display_links = ['id', 'comment']

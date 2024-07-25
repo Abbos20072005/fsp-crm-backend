@@ -17,11 +17,10 @@ from .models import Lead
 from .permissions import check_role
 from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, \
     CommentCreateSerializer, CommentListSerializer, BulkUpdateAdminSerializer
-from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, CommentSerializer, \
-    LeadStatusSerializer, MyLeadSerializer
+from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, MyLeadSerializer
 
 from django.db.models import Q, Sum, Count, Case, When, IntegerField
-from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, LeadFilterSerializer
+from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer
 from accounting.models import Check, ExpenditureStaff
 from core.BasePermissions import is_super_admin_or_hr, is_admin_or_super_admin
 

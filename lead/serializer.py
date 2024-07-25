@@ -69,6 +69,12 @@ class BulkUpdateAdminSerializer(serializers.Serializer):
         return value
 
 
+class MyCommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = "__all__"
+
+
 class MyLeadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lead
@@ -76,7 +82,7 @@ class MyLeadSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        data['comments'] = CommentListSerializer(Comment.objects.filter(lead=data['id']), many=True).data
+        data['comments'] = MyCommentSerializer(Comment.objects.filter(lead=data['id']), many=True).data
         data['total'] = self.context.get('total', None)
         data['interested_leads'] = self.context.get('interested_leads', None)
         data['possible_leads'] = self.context.get('possible_leads', None)
