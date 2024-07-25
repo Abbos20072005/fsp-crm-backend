@@ -1,7 +1,8 @@
 from datetime import date
 
 from lead.models import Student
-from .exceptions import BadRequestException
+from exceptions.exception import CustomApiException
+from exceptions.error_codes import ErrorCodes
 from django.db.models import Sum
 from authentication.models import User
 from accounting.models import Check, ExpenditureStaff, OutcomeType
@@ -15,8 +16,7 @@ def whose_check_list(*args, **kwargs):
     elif request.user.role in [2, 3, 4]:
         check = Check.objects.filter(is_deleted=False).order_by('-created_at')
         return check
-    raise BadRequestException('You have not access to see checks')
-
+    raise CustomApiException(error_code=ErrorCodes.FORBIDDEN.value)
 
 def whose_check_detail(*args, **kwargs):
     request = args[0]
@@ -27,8 +27,7 @@ def whose_check_detail(*args, **kwargs):
     elif request.user.role in [2, 3, 4]:
         check = Check.objects.filter(is_deleted=False).first()
         return check
-    raise BadRequestException("You have not access to see this check")
-
+    raise CustomApiException(error_code=ErrorCodes.FORBIDDEN.value)
 
 def whose_student(*args, **kwargs):
     pk = kwargs['pk']
@@ -39,8 +38,7 @@ def whose_student(*args, **kwargs):
     elif request.user.role == 1:
         student = Student.objects.filter(pk=pk, is_deleted=False, lead__admin_id=request.user.id).first()
         return student
-    raise BadRequestException("You have not access to see this student's checks")
-
+    raise CustomApiException(error_code=ErrorCodes.FORBIDDEN.value)
 
 def calculate_salary_of_admin(admin_id: int) -> dict:
     admin = User.objects.filter(id=admin_id, is_deleted=False).first()
