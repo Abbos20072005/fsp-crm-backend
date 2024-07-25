@@ -10,7 +10,7 @@ class BlacklistAccessTokenMiddleware(MiddlewareMixin):
             access_token = auth_header.split(' ')[1]
             if BlacklistedAccessToken.objects.filter(token=access_token).exists():
                 return JsonResponse(
-                    {'detail': 'Access token in blacklist, re-login', 'code': 401},
+                    data={'detail': 'Access token in blacklist, re-login', 'code': 401},
                     status=401
                 )
         else:
