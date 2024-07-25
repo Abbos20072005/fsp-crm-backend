@@ -23,6 +23,7 @@ class Lead(BaseModel):
 
 class Comment(BaseModel):
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE)
+    author = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
 
     comment = models.TextField()
 
