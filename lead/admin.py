@@ -30,8 +30,3 @@ class AdminComment(admin.ModelAdmin):
     list_display_links = ['comment']
 
 
-@admin.register(StudentDocuments)
-class StudentDocumentsAdmin(admin.ModelAdmin):
-    list_display = ['student', 'name', 'document']
-    list_filter = ['is_deleted']
-    search_fields = ['name']

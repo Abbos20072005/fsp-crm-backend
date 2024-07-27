@@ -98,3 +98,42 @@ class BulkUpdateAdminSerializer(serializers.Serializer):
         if not User.objects.filter(id=value).exists():
             raise serializers.ValidationError('New admin not found.')
         return value
+
+
+class MyCommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = "__all__"
+
+
+class MyLeadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Lead
+        fields = ('id', 'name', 'phone', 'status', 'address', 'admin', 'created_at')
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['comments'] = MyCommentSerializer(Comment.objects.filter(lead=data['id']), many=True).data
+        data['total'] = self.context.get('total', None)
+        data['interested_leads'] = self.context.get('interested_leads', None)
+        data['possible_leads'] = self.context.get('possible_leads', None)
+        data['joined_leads'] = self.context.get('joined_leads', None)
+        data['canceled_leads'] = self.context.get('canceled_leads', None)
+        return data
+
+
+class LeadStatsSerializer(serializers.Serializer):
+    full_name = serializers.CharField(max_length=100)
+    interested = serializers.IntegerField(default=0)
+    possible = serializers.IntegerField(default=0)
+    joined = serializers.IntegerField(default=0)
+    cancelled = serializers.IntegerField(default=0)
+    total_amount = serializers.FloatField(default=0)
+
+
+class LeadCountSerializer(serializers.Serializer):
+    total = serializers.IntegerField(default=0)
+    interested = serializers.IntegerField(default=0)
+    possible = serializers.IntegerField(default=0)
+    joined = serializers.IntegerField(default=0)
+    cancelled = serializers.IntegerField(default=0)

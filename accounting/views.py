@@ -8,108 +8,103 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 from core.custom_pagination import CustomPagination
-from core.BasePermissions import is_super_admin_or_hr, is_from_accounting_department, is_admin_or_super_admin, \
-    is_accountant_or_super_admin
+from core.BasePermissions import is_super_admin_or_hr, is_from_accounting_department, \
+    is_accountant_or_super_admin, is_from_student_department
 
 from exceptions.exception import CustomApiException
 from exceptions.error_codes import ErrorCodes
 
 from .models import Check, OutcomeType, Outcome, ExpenditureStaff
-from .utils import whose_check_list, whose_check_detail, whose_student, calculate_confirmed_check, \
-    calculate_salary_of_admin
 from .serializers import (CheckSerializer, OutcomeTypeSerializer, OutcomeSerializer, OutcomeFilterSerializer,
                           ExpenditureStaffSerializer, CheckFilterSerializer, AdminCheckFilterSerializer)
 from .dtos.requests import (CheckRequestSerializer, OutcomeTypeRequestSerializer, OutcomeRequestSerializer,
-                            CheckRequestUpdateSerializer, OutcomeTypeRequestUpdateSerializer,
+                            OutcomeTypeRequestUpdateSerializer,
                             OutcomeRequestUpdateSerializer, ExpenditureStaffRequestSerializer,
                             ExpenditureStaffRequestUpdateSerializer)
 
 
+# TODO:filter for checks
 class CheckViewSet(ViewSet):
     pagination_class = CustomPagination
     permission_classes = [IsAuthenticated, ]
     parser_classes = [MultiPartParser, FormParser]
 
-    @swagger_auto_schema(responses={200: CheckSerializer(many=True)})
-    def list(self, request):
-        check = whose_check_list(request)
-        serializer = CheckSerializer(check, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    # @swagger_auto_schema(
+    #     operation_summary='Checks list for accountant',
+    #     operation_description='Checks list for accountant for confirmation',
+    #     responses={200: CheckSerializer(many=True)},
+    #     tags=['Check']
+    # )
+    # def list(self, request):
+    #     check = whose_check_list(request)
+    #     serializer = CheckSerializer(check, many=True)
+    #     return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
+        operation_summary='Create check',
+        operation_description='Create check',
         request_body=CheckRequestSerializer,
-        responses={201: CheckSerializer(), 400: "Invalid data provided"}
+        responses={201: CheckSerializer(), 400: "Invalid data provided"},
+        tags=['Check']
     )
-    @is_admin_or_super_admin
+    @is_from_student_department
     def create(self, request):
-        request.data['uploaded_by'] = self.request.user.id
+        request.data['uploaded_by'] = request.user.id
         serializer = CheckSerializer(data=request.data)
         if not serializer.is_valid():
             raise CustomApiException(error_code=ErrorCodes.VALIDATION_FAILED.value, message=serializer.errors)
         serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(data={'message': serializer.data, 'ok': True}, status=status.HTTP_201_CREATED)
 
     @swagger_auto_schema(
-        manual_parameters=[
-            openapi.Parameter('check_id', openapi.IN_PATH, description="Check ID", type=openapi.TYPE_INTEGER),
-        ],
-        responses={200: CheckSerializer(), 404: "Check not found"}
-    )
-    def retrieve(self, request, check_id=None):
-        check = whose_check_detail(request, pk=check_id)
-        if not check:
-            raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
-        serializer = CheckSerializer(check)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    @swagger_auto_schema(
-        manual_parameters=[
-            openapi.Parameter('check_id', openapi.IN_PATH, description="Check ID", type=openapi.TYPE_INTEGER),
-        ],
-        request_body=CheckRequestUpdateSerializer,
-        responses={200: CheckSerializer(), 400: "Invalid data provided", 404: "Check not found"}
-    )
-    def update(self, request, check_id=None):
-        check = whose_check_detail(request, pk=check_id)
-        if not check:
-            raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
-
-        serializer = CheckSerializer(check, data=request.data, partial=True)
-        if not serializer.is_valid():
-            raise CustomApiException(error_code=ErrorCodes.VALIDATION_FAILED.value, message=serializer.errors)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    @swagger_auto_schema(
-        manual_parameters=[
-            openapi.Parameter('check_id', openapi.IN_PATH, description="Check ID", type=openapi.TYPE_INTEGER),
-        ],
-        responses={200: openapi.Response('Success'), 404: "Check not found"}
+        operation_summary='Confirm check',
+        operation_description='Confirm check',
+        responses={200: 'Success', 404: "Check not found"},
+        tags=['Check']
     )
     @is_accountant_or_super_admin
     def confirm_check(self, request, check_id=None):
-        check = Check.objects.filter(pk=check_id, is_deleted=False, is_confirmed=False).first()
+        check = Check.objects.filter(id=check_id, is_deleted=False, is_confirmed=False).first()
+
         if not check:
             raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
 
         check.is_confirmed = True
         check.save()
-        return Response({'ok': True, 'message': 'Check successfully confirmed.'}, status=status.HTTP_200_OK)
+        return Response(data={'message': 'Check successfully confirmed!', 'ok': True}, status=status.HTTP_200_OK)
 
 
 class OutcomeTypeViewSet(ViewSet):
     pagination_class = CustomPagination
 
-    @swagger_auto_schema(responses={200: OutcomeTypeSerializer(many=True)})
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(name='page', in_=openapi.IN_QUERY, description='Page number', type=openapi.TYPE_INTEGER),
+            openapi.Parameter(name='page_size', in_=openapi.IN_QUERY, description='Page size number',
+                              type=openapi.TYPE_INTEGER)
+        ],
+        operation_summary='Outcome list',
+        operation_description='Outcome list',
+        responses={200: OutcomeTypeSerializer()},
+        tags=['Outcome']
+    )
     @is_super_admin_or_hr
     def list(self, request):
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 10))
+        paginator = CustomPagination()
+        paginator.page = page
+        paginator.page_size = page_size
         queryset = OutcomeType.objects.filter(is_deleted=False)
-        serializer = OutcomeTypeSerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        paginated_users = paginator.paginate_queryset(queryset, request)
+        return Response(OutcomeTypeSerializer(paginated_users, many=True).data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
+        operation_summary='Create Outcome Type',
+        operation_description='Create Outcome Type',
         request_body=OutcomeTypeRequestSerializer,
-        responses={201: OutcomeTypeSerializer(), 400: "Invalid data provided"}
+        responses={201: OutcomeTypeSerializer(), 400: "Invalid data provided"},
+        tags=['Outcome']
     )
     @is_super_admin_or_hr
     def create(self, request):
@@ -117,34 +112,18 @@ class OutcomeTypeViewSet(ViewSet):
         if not serializer.is_valid():
             raise CustomApiException(error_code=ErrorCodes.VALIDATION_FAILED.value, message=serializer.errors)
         serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(data={'message': serializer.data, 'ok': True}, status=status.HTTP_201_CREATED)
 
     @swagger_auto_schema(
-        manual_parameters=[
-            openapi.Parameter('outcome_type_id', openapi.IN_PATH, description="Outcome Type ID",
-                              type=openapi.TYPE_INTEGER),
-        ],
-        responses={200: OutcomeTypeSerializer(), 404: "Outcome type not found"}
-    )
-    @is_super_admin_or_hr
-    def retrieve(self, request, outcome_type_id=None):
-        queryset = OutcomeType.objects.filter(pk=outcome_type_id, is_deleted=False).first()
-        if not queryset:
-            raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
-        serializer = OutcomeTypeSerializer(queryset)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    @swagger_auto_schema(
-        manual_parameters=[
-            openapi.Parameter('outcome_type_id', openapi.IN_PATH, description="Outcome Type ID",
-                              type=openapi.TYPE_INTEGER),
-        ],
+        operation_summary='Outcome Type',
+        operation_description='Outcome Type Detail',
         request_body=OutcomeTypeRequestUpdateSerializer,
-        responses={200: OutcomeTypeSerializer(), 400: "Invalid data provided", 404: "Outcome type not found"}
+        responses={200: OutcomeTypeSerializer(), 400: "Invalid data provided", 404: "Outcome type not found"},
+        tags=['Outcome']
     )
     @is_super_admin_or_hr
     def update(self, request, outcome_type_id=None):
-        instance = OutcomeType.objects.filter(pk=outcome_type_id, is_deleted=False).first()
+        instance = OutcomeType.objects.filter(id=outcome_type_id, is_deleted=False).first()
         if not instance:
             raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
 
@@ -152,65 +131,83 @@ class OutcomeTypeViewSet(ViewSet):
         if not serializer.is_valid():
             raise CustomApiException(error_code=ErrorCodes.VALIDATION_FAILED.value, message=serializer.errors)
         serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(data={'message': serializer.data, 'ok': True}, status=status.HTTP_200_OK)
 
 
 class OutcomeViewSet(ViewSet):
     pagination_class = CustomPagination
     permission_classes = [IsAuthenticated, ]
 
-    @swagger_auto_schema(responses={200: OutcomeSerializer(many=True)})
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(name='page', in_=openapi.IN_QUERY, description='Page number', type=openapi.TYPE_INTEGER),
+            openapi.Parameter(name='page_size', in_=openapi.IN_QUERY, description='Page size number',
+                              type=openapi.TYPE_INTEGER)
+        ],
+        operation_summary='Outcome List',
+        operation_description='Lists of Outcome',
+        responses={200: OutcomeSerializer(many=True)},
+        tags=['Outcome']
+    )
     @is_from_accounting_department
     def list(self, request):
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 10))
+        paginator = CustomPagination()
+        paginator.page = page
+        paginator.page_size = page_size
         queryset = Outcome.objects.filter(is_deleted=False)
-        serializer = OutcomeSerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        paginated_users = paginator.paginate_queryset(queryset, request)
+        return Response(data={'message': OutcomeSerializer(paginated_users, many=True).data, 'ok': True},
+                        status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
+        operation_summary='Outcome create',
+        operation_description='Outcome create',
+        tags=['Outcome'],
         request_body=OutcomeRequestSerializer,
-        responses={201: OutcomeSerializer(), 400: "Invalid data provided"}
+        responses={201: OutcomeSerializer(), 400: "Invalid data provided"},
     )
     @is_super_admin_or_hr
     def create(self, request):
         serializer = OutcomeSerializer(data=request.data)
-        print(request.data)
         if not serializer.is_valid():
             raise CustomApiException(error_code=ErrorCodes.VALIDATION_FAILED.value, message=serializer.errors)
         serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(data={'message': serializer.data, 'ok': True}, status=status.HTTP_201_CREATED)
 
     @swagger_auto_schema(
-        manual_parameters=[
-            openapi.Parameter('outcome_id', openapi.IN_PATH, description="Outcome ID", type=openapi.TYPE_INTEGER),
-        ],
-        responses={200: OutcomeSerializer(), 404: "Outcome not found"}
+        operation_summary='Outcome detail',
+        operation_description='Outcome detail',
+        tags=['Outcome'],
+        responses={200: OutcomeSerializer(), 404: "Outcome not found"},
     )
     @is_super_admin_or_hr
     def retrieve(self, request, outcome_id=None):
-        queryset = Outcome.objects.filter(pk=outcome_id, is_deleted=False).first()
+        queryset = Outcome.objects.filter(id=outcome_id, is_deleted=False).first()
         if not queryset:
             raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
         serializer = OutcomeSerializer(queryset)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(data={'message': serializer.data, 'ok': True}, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(
-        manual_parameters=[
-            openapi.Parameter('pk', openapi.IN_PATH, description="Outcome ID", type=openapi.TYPE_INTEGER),
-        ],
-        request_body=OutcomeRequestUpdateSerializer,
-        responses={200: OutcomeSerializer(), 400: "Invalid data provided", 404: "Outcome not found"}
-    )
-    @is_super_admin_or_hr
-    def update(self, request, outcome_id=None):
-        instance = Outcome.objects.filter(pk=outcome_id, is_deleted=False).first()
-        if not instance:
-            raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
-
-        serializer = OutcomeSerializer(instance, data=request.data, partial=True)
-        if not serializer.is_valid():
-            raise CustomApiException(error_code=ErrorCodes.VALIDATION_FAILED.value, message=serializer.errors)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    # @swagger_auto_schema(
+    #     operation_summary='Outcome update',
+    #     operation_description='Outcome update',
+    #     tags=['Outcome'],
+    #     request_body=OutcomeRequestUpdateSerializer,
+    #     responses={200: OutcomeSerializer(), 400: "Invalid data provided", 404: "Outcome not found"}
+    # )
+    # @is_super_admin_or_hr
+    # def update(self, request, outcome_id=None):
+    #     instance = Outcome.objects.filter(id=outcome_id, is_deleted=False).first()
+    #     if not instance:
+    #         raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
+    #
+    #     serializer = OutcomeSerializer(instance, data=request.data, partial=True)
+    #     if not serializer.is_valid():
+    #         raise CustomApiException(error_code=ErrorCodes.VALIDATION_FAILED.value, message=serializer.errors)
+    #     serializer.save()
+    #     return Response(data={'message': serializer.data, 'ok': True}, status=status.HTTP_200_OK)
 
 
 class OutcomeFilterViewSet(ViewSet):
@@ -243,62 +240,79 @@ class OutcomeFilterViewSet(ViewSet):
             result['created_at__lte'] = time_to
 
         outcome = Outcome.objects.filter(**result)
-        return Response(data={'result': OutcomeSerializer(outcome, many=True).data, 'ok': True},
+        return Response(data={'message': OutcomeSerializer(outcome, many=True).data, 'ok': True},
                         status=status.HTTP_200_OK)
 
 
 class ExpenditureStaffViewSet(ViewSet):
     pagination_class = CustomPagination
-    permission_classes = [IsAuthenticated, ]
-
-    @swagger_auto_schema(responses={200: ExpenditureStaffSerializer(many=True)})
-    @is_from_accounting_department
-    def list(self, request):
-        queryset = ExpenditureStaff.objects.filter(is_deleted=False)
-        serializer = ExpenditureStaffSerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(name='page', in_=openapi.IN_QUERY, description='Page number', type=openapi.TYPE_INTEGER),
+            openapi.Parameter(name='page_size', in_=openapi.IN_QUERY, description='Page size number',
+                              type=openapi.TYPE_INTEGER)
+        ],
+        operation_summary='Expenditure list',
+        operation_description='Expenditure list',
+        tags=['Expenditure'],
+        responses={200: ExpenditureStaffSerializer(many=True)}
+    )
+    @is_from_accounting_department
+    def list(self, request):
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 10))
+        paginator = CustomPagination()
+        paginator.page = page
+        paginator.page_size = page_size
+        queryset = ExpenditureStaff.objects.filter(is_deleted=False)
+        paginated_users = paginator.paginate_queryset(queryset, request)
+        return Response(data={'message': ExpenditureStaffSerializer(paginated_users, many=True).data, 'ok': True},
+                        status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        operation_summary='Expenditure create',
+        operation_description='Expenditure create',
+        tags=['Expenditure'],
         request_body=ExpenditureStaffRequestSerializer,
         responses={201: ExpenditureStaffSerializer(), 400: "Invalid data provided"}
     )
     @is_super_admin_or_hr
-    def create(self, request):
-        user = ExpenditureStaff.objects.filter(user=request.user.id).first()
+    def create(self, request, pk):
+        user = ExpenditureStaff.objects.filter(id=pk).first()
         if user.is_deleted is True:
             raise CustomApiException(error_code=ErrorCodes.USER_DOES_NOT_EXIST.value)
-        serializer = ExpenditureStaffSerializer(data=request.data)
+        serializer = ExpenditureStaffSerializer(data={'user': pk, **request.data})
         if not serializer.is_valid():
             raise CustomApiException(error_code=ErrorCodes.VALIDATION_FAILED.value, message=serializer.errors)
         serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(data={'message': serializer.data, 'ok': True}, status=status.HTTP_201_CREATED)
 
     @swagger_auto_schema(
-        manual_parameters=[
-            openapi.Parameter('expenditure_staff_id', openapi.IN_PATH, description="ExpenditureStaff ID",
-                              type=openapi.TYPE_INTEGER),
-        ],
+        operation_summary='Expenditure detail',
+        operation_description='Expenditure detail',
+        tags=['Expenditure'],
         responses={200: ExpenditureStaffSerializer(), 404: "ExpenditureStaff not found"}
     )
     @is_super_admin_or_hr
     def retrieve(self, request, expenditure_staff_id=None):
-        queryset = ExpenditureStaff.objects.filter(pk=expenditure_staff_id, is_deleted=False).first()
+        queryset = ExpenditureStaff.objects.filter(id=expenditure_staff_id, is_deleted=False).first()
         if not queryset:
             raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
         serializer = ExpenditureStaffSerializer(queryset)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(data={'message': serializer.data, 'ok': True}, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
-        manual_parameters=[
-            openapi.Parameter('expenditure_staff_id', openapi.IN_PATH, description="ExpenditureStaff ID",
-                              type=openapi.TYPE_INTEGER),
-        ],
+        operation_summary='Expenditure update',
+        operation_description='Expenditure update',
+        tags=['Expenditure'],
         request_body=ExpenditureStaffRequestUpdateSerializer,
-        responses={200: ExpenditureStaffSerializer(), 400: "Invalid data provided", 404: "ExpenditureStaff not found"}
+        responses={200: ExpenditureStaffSerializer(), 400: "Invalid data provided",
+                   404: "ExpenditureStaff not found"}
     )
     @is_super_admin_or_hr
     def update(self, request, expenditure_staff_id=None):
-        instance = ExpenditureStaff.objects.filter(pk=expenditure_staff_id, is_deleted=False).first()
+        instance = ExpenditureStaff.objects.filter(id=expenditure_staff_id, is_deleted=False).first()
         if not instance:
             raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
 
@@ -306,7 +320,7 @@ class ExpenditureStaffViewSet(ViewSet):
         if not serializer.is_valid():
             raise CustomApiException(error_code=ErrorCodes.VALIDATION_FAILED.value, message=serializer.errors)
         serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(data={'message': serializer.data, 'ok': True}, status=status.HTTP_200_OK)
 
 
 class CheckFilterViewSet(ViewSet):
@@ -315,9 +329,11 @@ class CheckFilterViewSet(ViewSet):
             openapi.Parameter('time_from', openapi.IN_QUERY, description='Start time', type=openapi.TYPE_STRING),
             openapi.Parameter('time_to', openapi.IN_QUERY, description='End time', type=openapi.TYPE_STRING),
         ],
+        responses={200: CheckSerializer()},
         operation_summary='Check Filter',
         operation_description='Check Filter',
-        responses={200: CheckSerializer()}
+        tags=['Check']
+
     )
     @is_accountant_or_super_admin
     def check_filter(self, request):
@@ -332,11 +348,15 @@ class CheckFilterViewSet(ViewSet):
             result['created_at__lte'] = time_to
 
         check = Check.objects.filter(**result)
-        return Response(data=CheckSerializer(check, many=True).data, status=status.HTTP_200_OK)
+        data = CheckSerializer(check, many=True).data
+        return Response(data={'message': data, 'ok': True}, status=status.HTTP_200_OK)
 
 
 class AdminCheckFilterViewSet(ViewSet):
     @swagger_auto_schema(
+        operation_summary='Check Filter',
+        operation_description='Check Filter',
+        tags=['Check'],
         manual_parameters=[
             openapi.Parameter('uploaded_by', openapi.IN_QUERY, description='Admin ID', type=openapi.TYPE_INTEGER),
             openapi.Parameter('time_from', openapi.IN_QUERY, description='Start time', type=openapi.TYPE_STRING),
@@ -361,26 +381,27 @@ class AdminCheckFilterViewSet(ViewSet):
             result['created_at__lte'] = time_to
 
         check = Check.objects.filter(**result)
-        return Response(data=CheckSerializer(check, many=True).data, status=status.HTTP_200_OK)
+        data = CheckSerializer(check, many=True).data
+        return Response(data={'message': data, 'ok': True}, status=status.HTTP_200_OK)
 
-
-class AdminSalaryViewSet(ViewSet):
-    @is_accountant_or_super_admin
-    def get_salary(self, request, pk=None):
-        data = calculate_salary_of_admin(pk)
-        if not data:
-            raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
-        return Response(data, status=status.HTTP_200_OK)
-
-
-class CheckAmountViewSet(ViewSet):
-
-    @is_accountant_or_super_admin
-    def get_check(self, request):
-        amount = calculate_confirmed_check()
-        if not amount:
-            raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
-        data = {
-            'Check amount for this month': amount
-        }
-        return Response(data, status=status.HTTP_200_OK)
+#
+# class AdminSalaryViewSet(ViewSet):
+#     @is_accountant_or_super_admin
+#     def get_salary(self, request, pk=None):
+#         data = calculate_salary_of_admin(pk)
+#         if not data:
+#             raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
+#         return Response(data={'result': data, 'ok': True}, status=status.HTTP_200_OK)
+#
+#
+# class CheckAmountViewSet(ViewSet):
+#
+#     @is_accountant_or_super_admin
+#     def get_check(self, request):
+#         amount = calculate_confirmed_check()
+#         if not amount:
+#             raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
+#         data = {
+#             'amount': amount
+#         }
+#         return Response(data={'result': data, 'ok': True}, status=status.HTTP_200_OK)
