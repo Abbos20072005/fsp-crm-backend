@@ -60,19 +60,19 @@ def whose_student(*args, **kwargs):
 #     return data
 #
 #
-def calculate_confirmed_check(type) -> dict:
-    today = date.today()
-    outcome_type = OutcomeType.objects.filter(is_deleted=False, name=type).first()
-    outcome_type_percent = outcome_type.values('type')
-    check = Check.objects.filter(created_at__year=today.year, created_at__month=today.month, is_confirmed=True,
-                                 is_deleted=False).order_by('created_at')
-    confirmed = check.values('amount').distinct().aggregate(total_amount=Sum('amount'))['total_amount']
-    limit_amount = confirmed * outcome_type_percent / 100
-    outcome = Outcome.objects.filter(created_at__year=today.year, created_at__month=today.month, is_deleted=False,
-                                     type=outcome_type).first()
-    outcome_amount = outcome.values('amount').distinct().aggregate(total_amount=Sum('amount'))['total_amount']
-    return {
-            'limit': limit_amount,
-            'used': outcome_amount,
-            'usable': limit_amount - outcome_amount
-            }
+# def calculate_confirmed_check(type) -> dict:
+#     today = date.today()
+#     outcome_type = OutcomeType.objects.filter(is_deleted=False, name=type).first()
+#     outcome_type_percent = outcome_type.values('type')
+#     check = Check.objects.filter(created_at__year=today.year, created_at__month=today.month, is_confirmed=True,
+#                                  is_deleted=False).order_by('created_at')
+#     confirmed = check.values('amount').distinct().aggregate(total_amount=Sum('amount'))['total_amount']
+#     limit_amount = confirmed * outcome_type_percent / 100
+#     outcome = Outcome.objects.filter(created_at__year=today.year, created_at__month=today.month, is_deleted=False,
+#                                      type=outcome_type).first()
+#     outcome_amount = outcome.values('amount').distinct().aggregate(total_amount=Sum('amount'))['total_amount']
+#     return {
+#             'limit': limit_amount,
+#             'used': outcome_amount,
+#             'usable': limit_amount - outcome_amount
+#             }
