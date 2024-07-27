@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .views import UserViewSet
+from .views import UserViewSet, UserDetailView
 
 urlpatterns = [
     path('register/', UserViewSet.as_view({'post': 'register', })),
@@ -13,6 +13,9 @@ urlpatterns = [
          UserViewSet.as_view({'patch': 'update_user', 'put': 'change_user_password', 'delete': 'soft_delete'})),
     path('users/filter/', UserViewSet.as_view({'post': 'filter_users', })),
     path('users/search/', UserViewSet.as_view({'get': 'search_user'}), name='search_user'),
+    path('user-details/', UserDetailView.as_view({
+        'patch': 'update'
+    }), name='user-details'),
 ]
 
 """

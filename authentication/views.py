@@ -9,7 +9,8 @@ from core.custom_pagination import CustomPagination
 from exceptions.error_codes import ErrorCodes
 from exceptions.exception import CustomApiException
 from .serializers import UserSerializer, UserRegisterSerializer, ChangePasswordSerializer, \
-    ChangeUserPasswordSerializer, ChangeUserDetailsSerializer, LogoutSerializer, UserFilterSerializer
+    ChangeUserPasswordSerializer, ChangeUserDetailsSerializer, LogoutSerializer, UserFilterSerializer, \
+    SelfChangeUserDetailsSerializer
 from drf_yasg import openapi
 from core.BasePermissions import is_super_admin_or_hr, is_employee, is_super_admin
 
@@ -269,3 +270,24 @@ class UserViewSet(viewsets.ViewSet):
         return paginator.get_paginated_response(
             data={'result': UserSerializer(paginated_users, many=True).data, 'ok': True}
         )
+
+
+class UserDetailView(viewsets.ViewSet):
+    @swagger_auto_schema(
+        request_body=SelfChangeUserDetailsSerializer,
+        responses={
+            200: SelfChangeUserDetailsSerializer,
+            400: 'Invalid data'
+        },
+        operation_summary="Update user details",
+        operation_description="This endpoint allows a user to update their details."
+    )
+    @is_employee
+    def update(self, request):
+        user = request.user
+        serializer = SelfChangeUserDetailsSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(data={'message': 'User details successfully updated', 'ok': True},
+                            status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
