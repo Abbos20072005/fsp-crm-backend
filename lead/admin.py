@@ -8,6 +8,7 @@ from .models import Lead, Student, Comment
 class AdminLead(admin.ModelAdmin):
     list_display = ['name', 'is_deleted']
 
+
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
     list_display = ['lead', 'full_name', 'phone', 'is_deleted']
@@ -22,10 +23,12 @@ class DocumentTypeAdmin(admin.ModelAdmin):
     list_filter = ['is_deleted']
     search_fields = ['name']
 
+
 @admin.register(Comment)
 class AdminComment(admin.ModelAdmin):
     list_display = ['comment']
-    list_display_links = ['id', 'comment']
+    list_display_links = ['comment']
+
 
 @admin.register(StudentDocuments)
 class StudentDocumentsAdmin(admin.ModelAdmin):

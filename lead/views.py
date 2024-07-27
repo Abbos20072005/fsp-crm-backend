@@ -5,14 +5,12 @@ from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Lead, Student, DocumentType, StudentDocuments
+from .models import Lead, Student, DocumentType, StudentDocuments, Comment
 from authentication.models import User
-from .models import Lead, Comment
 from .permissions import check_role
-from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, CommentSerializer, \
-    LeadStatusSerializer, StudentSerializer, DocumentTypeSerializer, StudentDocumentSerializer, MakeStudentSerializer
 from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, \
-    CommentCreateSerializer, CommentListSerializer, BulkUpdateAdminSerializer
+    CommentCreateSerializer, CommentListSerializer, BulkUpdateAdminSerializer, StudentSerializer, \
+    DocumentTypeSerializer, StudentDocumentSerializer, MakeStudentSerializer
 
 
 class LeadViewSet(ViewSet):
