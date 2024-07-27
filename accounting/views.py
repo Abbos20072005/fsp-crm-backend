@@ -15,7 +15,6 @@ from exceptions.exception import CustomApiException
 from exceptions.error_codes import ErrorCodes
 
 from .models import Check, OutcomeType, Outcome, ExpenditureStaff
-from .utils import calculate_confirmed_check, calculate_salary_of_admin
 from .serializers import (CheckSerializer, OutcomeTypeSerializer, OutcomeSerializer, OutcomeFilterSerializer,
                           ExpenditureStaffSerializer, CheckFilterSerializer, AdminCheckFilterSerializer)
 from .dtos.requests import (CheckRequestSerializer, OutcomeTypeRequestSerializer, OutcomeRequestSerializer,
@@ -247,7 +246,6 @@ class OutcomeFilterViewSet(ViewSet):
 
 class ExpenditureStaffViewSet(ViewSet):
     pagination_class = CustomPagination
-    permission_classes = [IsAuthenticated, ]
 
     @swagger_auto_schema(
         manual_parameters=[
@@ -386,24 +384,24 @@ class AdminCheckFilterViewSet(ViewSet):
         data = CheckSerializer(check, many=True).data
         return Response(data={'message': data, 'ok': True}, status=status.HTTP_200_OK)
 
-
-class AdminSalaryViewSet(ViewSet):
-    @is_accountant_or_super_admin
-    def get_salary(self, request, pk=None):
-        data = calculate_salary_of_admin(pk)
-        if not data:
-            raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
-        return Response(data={'result': data, 'ok': True}, status=status.HTTP_200_OK)
-
-
-class CheckAmountViewSet(ViewSet):
-
-    @is_accountant_or_super_admin
-    def get_check(self, request):
-        amount = calculate_confirmed_check()
-        if not amount:
-            raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
-        data = {
-            'Check amount for this month': amount
-        }
-        return Response(data={'result': data, 'ok': True}, status=status.HTTP_200_OK)
+#
+# class AdminSalaryViewSet(ViewSet):
+#     @is_accountant_or_super_admin
+#     def get_salary(self, request, pk=None):
+#         data = calculate_salary_of_admin(pk)
+#         if not data:
+#             raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
+#         return Response(data={'result': data, 'ok': True}, status=status.HTTP_200_OK)
+#
+#
+# class CheckAmountViewSet(ViewSet):
+#
+#     @is_accountant_or_super_admin
+#     def get_check(self, request):
+#         amount = calculate_confirmed_check()
+#         if not amount:
+#             raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
+#         data = {
+#             'amount': amount
+#         }
+#         return Response(data={'result': data, 'ok': True}, status=status.HTTP_200_OK)

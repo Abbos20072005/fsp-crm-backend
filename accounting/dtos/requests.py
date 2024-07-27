@@ -54,16 +54,15 @@ class OutcomeRequestUpdateSerializer(serializers.ModelSerializer):
 class ExpenditureStaffRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExpenditureStaff
-        fields = ['user', 'name', 'description', 'amount']
+        fields = ['user', 'name', 'amount']
 
 
 class ExpenditureStaffRequestUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExpenditureStaff
-        fields = ['user', 'name', 'description', 'amount']
+        fields = ['user', 'name', 'amount']
         extra_kwargs = {
             'user': {'required': False},
             'name': {'required': False},
-            'description': {'required': False},
             'amount': {'required': False},
         }
