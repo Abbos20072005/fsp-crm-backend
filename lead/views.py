@@ -319,12 +319,8 @@ class LeadStatsViewSet(ViewSet):
     )
     @is_super_admin
     def count_leads(self, request, *args, **kwargs):
-        status_ = lambda num: Count("status", filter=Q(status=num))
         year = request.query_params.get('year', datetime.now().year)
-        interested = Count("status", filter=Q(status=1))
-        possible = Count("status", filter=Q(status=2))
-        joined = Count("status", filter=Q(status=3))
-        cancelled = Count("status", filter=Q(status=4))
+        status_ = lambda num: Count("status", filter=Q(status=num))
 
         leads = Lead.objects.filter(updated_at__year=year).aggregate(interested=status_(1),
                                                                      possible=status_(2),
