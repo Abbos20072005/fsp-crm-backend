@@ -99,3 +99,12 @@ class UserFilterSerializer(serializers.Serializer):
         if role is not None and role not in [1, 2, 3]:
             raise ValidationError({"role": "Role must be one of the following values: 1, 2, 3."}, code=400)
         return data
+
+class SelfChangeUserDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'first_name', 'last_name', 'email','role']
+        extra_kwargs = {
+            'username': {'read_only': True},
+            'role': {'read_only': True},# Username va role ni o'zgartirib bo'lmaydi
+        }
