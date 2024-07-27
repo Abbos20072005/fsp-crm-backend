@@ -27,7 +27,6 @@ class Salary(BaseModel):
 class ExpenditureStaff(BaseModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
-    description = models.CharField(max_length=777)
     amount = models.DecimalField(default=0.00, max_digits=15, decimal_places=2)
 
     def __str__(self):

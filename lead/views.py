@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from django.core.paginator import Paginator
 from drf_yasg import openapi
@@ -9,20 +9,18 @@ from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework import status
 
-from authentication.models import User
-from .models import Lead, Comment
+from .models import Lead, Student, DocumentType, StudentDocuments, Comment,  STATUS_CHOICES
+
 
 from authentication.models import User
-from .models import Lead
 from .permissions import check_role
 from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, \
-    CommentCreateSerializer, CommentListSerializer, BulkUpdateAdminSerializer
-from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, MyLeadSerializer
+    CommentCreateSerializer, CommentListSerializer, BulkUpdateAdminSerializer, LeadStatsSerializer, LeadCountSerializer, \
+     StudentSerializer, DocumentTypeSerializer, StudentDocumentSerializer, MakeStudentSerializer, MyLeadSerializer
 
 from django.db.models import Q, Sum, Count, Case, When, IntegerField
-from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer
-from accounting.models import Check, ExpenditureStaff
-from core.BasePermissions import is_super_admin_or_hr, is_admin_or_super_admin
+from accounting.models import Check, ExpenditureStaff, Salary
+from core.BasePermissions import is_super_admin_or_hr, is_admin_or_super_admin, is_super_admin
 
 
 class LeadViewSet(ViewSet):
@@ -187,6 +185,123 @@ class CommentViewSet(ViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class DocumentTypeViewSet(ViewSet):
+    @swagger_auto_schema(
+        operation_description='Create a Document Type',
+        operation_summary='Create a Student',
+        request_body=DocumentTypeSerializer,
+        responses={201: 'Document Type created', },
+        tags=['Documents']
+    )
+    def create(self, request):
+        serializer = DocumentTypeSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        operation_description='Remove and get document type',
+        responses={200: 'Document type'},
+        tags=['Documents'],
+
+    )
+    def list(self, request):
+        queryset = DocumentType.objects.all()
+        serializer = DocumentTypeSerializer(queryset, many=True)
+        if not serializer.data:
+            return Response(serializer.errors, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class StudentDocumentViewSet(ViewSet):
+    @swagger_auto_schema(
+        operation_description='Create a Document',
+        operation_summary='Create a Document',
+        request_body=StudentDocumentSerializer,
+        responses={201: 'Document created', },
+        tags=['Documents']
+    )
+    def create(self, request, student_id):
+        data = request.data
+        data['student'] = Student.objects.filter(id=student_id).first()
+        print(data)
+        serializer = StudentDocumentSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        operation_description='get student documents',
+        responses={200: 'Documents'},
+        tags=['Documents'],
+
+    )
+    def list(self, request):
+        queryset = Student.objects.all()
+        serializer = StudentSerializer(queryset, many=True)
+        if not serializer.data:
+            return Response(serializer.errors, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# TODO: must add permissons
+class StudentViewSet(ViewSet):
+    @swagger_auto_schema(
+        operation_description='Create a Student',
+        operation_summary='Create a Student',
+        request_body=StudentSerializer,
+        responses={201: 'Student created', },
+        tags=['Student']
+    )
+    def create(self, request):
+        data = request.data
+        serializer = StudentSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        operation_description='Remove and get student documents',
+        responses={200: 'Student documents'},
+        tags=['Student']
+    )
+    def list(self, request):
+        queryset = Student.objects.all()
+        serializer = StudentSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class MakeStudentViewSet(ViewSet):
+    @swagger_auto_schema(
+        operation_description='Create a Student',
+        operation_summary='Create a Student',
+        request_body=MakeStudentSerializer,
+        responses={201: 'Student created', },
+        tags=['Student']
+    )
+    def create(self, request):
+        data = request.data
+        lead = Lead.objects.filter(id=data['lead']).first()
+
+        if not lead:
+            return Response({"error": "Lead not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        student_data = {
+            'full_name': lead.name,
+            'phone': lead.phone,
+            'address': lead.address,
+            'admin': lead.admin_id,
+        }
+
+        student_data.update(data)
+        serializer = MakeStudentSerializer(data=student_data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 class LeadStatsViewSet(ViewSet):
     @swagger_auto_schema(
         operation_description="Admin Dashboard",
@@ -266,3 +381,66 @@ class LeadStatsViewSet(ViewSet):
             'salary_this_month': kpi_from_check * admin.kpi + admin.fixed_salary - minus
         }
         return data
+
+    @swagger_auto_schema(
+        operation_description='Admin Dashboard',
+        operation_summary='Admin Dashboard',
+        manual_parameters=[
+            openapi.Parameter('start_date', type=openapi.TYPE_STRING, in_=openapi.IN_QUERY),
+            openapi.Parameter('to_date', type=openapi.TYPE_STRING, in_=openapi.IN_QUERY),
+        ],
+        responses={200: LeadStatsSerializer()},
+        tags=['admin_dashboard']
+    )
+    @is_super_admin
+    def sum_leads(self, request, *args, **kwargs):
+        data = request.query_params
+        start_date = data.get('start_date', datetime.now() - timedelta(days=15))
+        to_date = data.get('to_date', str(datetime.now().date()))
+        leads = Lead.objects.filter(updated_at__lte=to_date + ' 23:59:59', updated_at__gte=start_date, is_deleted=False,
+                                    admin__isnull=False).values('status', 'admin', 'admin__first_name',
+                                                                'admin__last_name')
+        leads_ = []
+        for lead in leads:
+            full_name = lead['admin__first_name'] + ' ' + lead['admin__last_name']
+            for lead_ in leads_:
+                if full_name == lead_['full_name']:
+                    lead_[STATUS_CHOICES[lead['status'] - 1][1].lower()] += 1
+                    break
+            else:
+                d = {'full_name': full_name, 'interested': 0, 'possible': 0, 'joined': 0, 'cancelled': 0}
+                d[STATUS_CHOICES[lead['status'] - 1][1].lower()] += 1
+                leads_.append(d)
+
+        for i in range(len(leads_)):
+            check_count = Check.objects.filter(updated_at__lte=to_date + ' 23:59:59',
+                                               updated_at__gte=start_date,
+                                               uploaded_by_id=leads[i]['admin'],
+                                               is_deleted=False, is_confirmed=True).values('student').distinct().count()
+            kpi = Salary.objects.filter(user_id=leads[i]['admin']).first().kpi_amount
+            leads_[i]['total_amount'] = kpi * check_count
+
+        serializer = LeadStatsSerializer(leads_, many=True)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        operation_description='Admin Dashboard',
+        operation_summary='Admin Dashboard',
+        manual_parameters=[
+            openapi.Parameter('year', type=openapi.TYPE_STRING, in_=openapi.IN_QUERY),
+        ],
+        responses={200: LeadCountSerializer()},
+        tags=['admin_dashboard']
+    )
+    @is_super_admin
+    def count_leads(self, request, *args, **kwargs):
+        year = request.query_params.get('year', datetime.now().year)
+        status_ = lambda num: Count("status", filter=Q(status=num))
+
+        leads = Lead.objects.filter(updated_at__year=year).aggregate(interested=status_(1),
+                                                                     possible=status_(2),
+                                                                     joined=status_(3),
+                                                                     cancelled=status_(4),
+                                                                     total=Count('id'))
+        serializer = LeadCountSerializer(leads)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
