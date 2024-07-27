@@ -1,7 +1,6 @@
 from django.urls import path
 from .views import LeadViewSet, StudentViewSet, DocumentTypeViewSet, StudentDocumentViewSet, \
-    MakeStudentViewSet, CommentViewSet, LeadStatsViewSet
-
+    MakeStudentViewSet, CommentViewSet, LeadStatsViewSet, StatisticsViewSet
 
 urlpatterns = [
     path('create/', LeadViewSet.as_view({'post': 'create'})),
@@ -14,7 +13,7 @@ urlpatterns = [
     path('student/', StudentViewSet.as_view({'get': 'list', 'post': 'create'})),
     path('document/type/', DocumentTypeViewSet.as_view({'post': 'create', 'get': 'list'})),
     path('student/<int:student_id>/upload/', StudentDocumentViewSet.as_view({'get': 'list', 'post': 'create'})),
-    path('make-student/', MakeStudentViewSet.as_view({'post': 'create'}))
+    path('make-student/', MakeStudentViewSet.as_view({'post': 'create'})),
 
     path('admin-dash/salary/', LeadStatsViewSet.as_view({"get": "my_salary"})),
     path('admin-dash/leads/', LeadStatsViewSet.as_view({"get": "my_leads"})),
@@ -22,6 +21,8 @@ urlpatterns = [
     path('admin-dash/count/', LeadStatsViewSet.as_view({"get": "count_leads"})),
     path('<int:lead_id>/comments/', CommentViewSet.as_view({'post': 'create', 'get': 'list'})),
     path('', CommentViewSet.as_view({'put': 'bulk_update_admin'})),
+    path('api/lead/statistics/', StatisticsViewSet.as_view({'post': 'lead_statistics'}), name='lead-statistics')
+
 ]
 
 """

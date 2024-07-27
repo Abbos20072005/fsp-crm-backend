@@ -137,3 +137,8 @@ class LeadCountSerializer(serializers.Serializer):
     possible = serializers.IntegerField(default=0)
     joined = serializers.IntegerField(default=0)
     cancelled = serializers.IntegerField(default=0)
+
+
+class HRStatisticsSerializer(serializers.Serializer):
+    start_date = serializers.DateField(required=True)
+    end_date = serializers.DateField(required=True)
