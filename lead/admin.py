@@ -1,13 +1,12 @@
 from django.contrib import admin
 from .models import Lead, Comment, Student, StudentDocuments, DocumentType
 
+from .models import Lead, Student, Comment
+
 
 @admin.register(Lead)
-class LeadAdmin(admin.ModelAdmin):
-    list_display = ['name', 'phone']
-    list_filter = ['is_deleted']
-    search_fields = ['name']
-
+class AdminLead(admin.ModelAdmin):
+    list_display = ['name', 'is_deleted']
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
@@ -23,6 +22,10 @@ class DocumentTypeAdmin(admin.ModelAdmin):
     list_filter = ['is_deleted']
     search_fields = ['name']
 
+@admin.register(Comment)
+class AdminComment(admin.ModelAdmin):
+    list_display = ['comment']
+    list_display_links = ['id', 'comment']
 
 @admin.register(StudentDocuments)
 class StudentDocumentsAdmin(admin.ModelAdmin):

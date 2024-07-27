@@ -1,9 +1,17 @@
 from django.urls import path
 from .views import LeadViewSet, FilteredLeadViewSet, StudentViewSet, DocumentTypeViewSet, StudentDocumentViewSet, \
     MakeStudentViewSet
+from .views import LeadViewSet, CommentViewSet
 
 urlpatterns = [
     path('create/', LeadViewSet.as_view({'post': 'create'})),
+    path('list/', LeadViewSet.as_view({'get': 'list'})),
+    path('filter/', LeadViewSet.as_view({'post': 'filter'})),
+    path('<int:lead_id>/', LeadViewSet.as_view({'put': 'update', 'delete': 'soft_delete'})),
+    path('search/', LeadViewSet.as_view({'get': 'search_lead'}), name='search_lead'),
+
+    path('<int:lead_id>/comments/', CommentViewSet.as_view({'post': 'create', 'get': 'list'})),
+    path('', CommentViewSet.as_view({'put': 'bulk_update_admin'})),
     path('<int:lead_id>/', LeadViewSet.as_view({'put': 'update', 'delete': 'delete'})),
     path('filter/', FilteredLeadViewSet.as_view({'get': 'list'})),
     path('filter/status/', FilteredLeadViewSet.as_view({'post': 'check_status'})),
@@ -22,3 +30,4 @@ urlpatterns = [
 
 
 """
+
