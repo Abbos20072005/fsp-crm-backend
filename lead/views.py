@@ -135,6 +135,7 @@ class StudentDocumentViewSet(ViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+# TODO: must add permissons
 class StudentViewSet(ViewSet):
     @swagger_auto_schema(
         operation_description='Create a Student',

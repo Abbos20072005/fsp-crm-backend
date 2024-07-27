@@ -65,3 +65,4 @@ class StudentDocuments(BaseModel, models.Model):
     def __str__(self):
         # return self.name
         return '%s: %s ' % (self.student, self.type)
+
