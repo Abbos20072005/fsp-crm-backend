@@ -16,7 +16,8 @@ from authentication.models import User
 from .permissions import check_role
 from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, \
     CommentCreateSerializer, CommentListSerializer, BulkUpdateAdminSerializer, LeadStatsSerializer, LeadCountSerializer, \
-     StudentSerializer, DocumentTypeSerializer, StudentDocumentSerializer, MakeStudentSerializer, MyLeadSerializer
+    StudentSerializer, DocumentTypeSerializer, StudentDocumentSerializer, MakeStudentSerializer, MyLeadSerializer, \
+    HRStatisticsSerializer
 
 from django.db.models import Q, Sum, Count, Case, When, IntegerField
 from accounting.models import Check, ExpenditureStaff, Salary
@@ -444,3 +445,58 @@ class LeadStatsViewSet(ViewSet):
                                                                      total=Count('id'))
         serializer = LeadCountSerializer(leads)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+class StatisticsViewSet(ViewSet):
+
+    @swagger_auto_schema(
+        request_body=HRStatisticsSerializer,
+        operation_summary="Get lead statistics",
+        operation_description="Retrieve statistics about leads within a specified date range.",
+        responses={
+            200: openapi.Response(
+                description="Statistics data returned",
+                examples={
+                    'application/json': {
+                        "total_leads": 10,
+                        "leads_by_status": {
+                            "1": 5,
+                            "2": 3,
+                            "3": 2,
+                            "4": 0
+                        },
+                        "students_by_leads": {
+                            "lead1": 2,
+                            "lead2": 3
+                        }
+                    }
+                }
+            ),
+            400: openapi.Response(description="Invalid input")
+        }
+    )
+    @is_super_admin_or_hr
+    def lead_statistics(self, request):
+        serializer = HRStatisticsSerializer(data=request.data)
+        if serializer.is_valid():
+            start_date = serializer.validated_data['start_date']
+            end_date = serializer.validated_data['end_date']
+
+
+            leads = Lead.objects.filter(created_at__range=[start_date, end_date])
+
+
+            total_leads = leads.count()
+            leads_by_status = leads.values('status').annotate(count=Count('status'))
+            students_by_leads = leads.annotate(student_count=Count('student')).values('name', 'student_count')
+
+            response_data = {
+                "total_leads": total_leads,
+                "leads_by_status": {
+                    status['status']: status['count'] for status in leads_by_status
+                },
+                "students_by_leads": {
+                    lead['name']: lead['student_count'] for lead in students_by_leads
+                }
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
