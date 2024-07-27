@@ -37,7 +37,7 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
 class StudentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Student
-        fields = ['id', 'full_name', 'phone', 'passport_number', 'personal_number', 'lead']
+        fields = ['id', 'full_name', 'phone', 'passport_number', 'personal_number', 'lead', 'address', 'admin']
 
     def to_representation(self, instance):
         instance = super(StudentSerializer, self).to_representation(instance)

@@ -32,11 +32,13 @@ class Comment(BaseModel):
 
 class Student(BaseModel, models.Model):
     lead = models.OneToOneField(Lead, on_delete=models.CASCADE)
+    admin = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
 
     full_name = models.CharField(max_length=250)
     phone = models.CharField(max_length=100)
     passport_number = models.CharField(max_length=100)
     personal_number = models.CharField(max_length=100)
+    address = models.CharField(max_length=100)
 
     def __str__(self):
         return self.full_name

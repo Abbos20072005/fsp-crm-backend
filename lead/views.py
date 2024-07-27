@@ -180,6 +180,8 @@ class MakeStudentViewSet(ViewSet):
         student_data = {
             'full_name': lead.name,
             'phone': lead.phone,
+            'address': lead.address,
+            'admin': lead.admin_id,
         }
 
         student_data.update(data)
