@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from authentication.models import User
 from .models import Lead, Comment
+from .models import Lead, Comment, Student, StudentDocuments, DocumentType
 
 
 class LeadSerializer(serializers.ModelSerializer):
@@ -38,6 +39,36 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lead
         fields = ["admin", "name", "phone", "status", "address"]
+
+
+# TODO check the students
+
+class StudentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Student
+        fields = ['id', 'full_name', 'phone', 'passport_number', 'personal_number', 'lead', 'address', 'admin']
+
+    def to_representation(self, instance):
+        instance = super(StudentSerializer, self).to_representation(instance)
+        return instance
+
+
+class DocumentTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DocumentType
+        fields = ['id', 'name']
+
+
+class StudentDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentDocuments
+        fields = ['id', 'document', 'name', 'student']
+
+
+class MakeStudentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Student
+        fields = ['id', 'full_name', 'phone', 'lead']
 
 
 class BulkUpdateAdminSerializer(serializers.Serializer):
