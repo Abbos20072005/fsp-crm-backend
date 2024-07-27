@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from django.core.paginator import Paginator
 from drf_yasg import openapi
@@ -10,19 +10,19 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from authentication.models import User
-from .models import Lead, Comment
+from .models import Lead, Comment, STATUS_CHOICES
 
 from authentication.models import User
 from .models import Lead
 from .permissions import check_role
 from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, \
-    CommentCreateSerializer, CommentListSerializer, BulkUpdateAdminSerializer
+    CommentCreateSerializer, CommentListSerializer, BulkUpdateAdminSerializer, LeadStatsSerializer, LeadCountSerializer
 from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, MyLeadSerializer
 
 from django.db.models import Q, Sum, Count, Case, When, IntegerField
 from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer
-from accounting.models import Check, ExpenditureStaff
-from core.BasePermissions import is_super_admin_or_hr, is_admin_or_super_admin
+from accounting.models import Check, ExpenditureStaff, Salary
+from core.BasePermissions import is_super_admin_or_hr, is_admin_or_super_admin, is_super_admin
 
 
 class LeadViewSet(ViewSet):
@@ -266,3 +266,66 @@ class LeadStatsViewSet(ViewSet):
             'salary_this_month': kpi_from_check * admin.kpi + admin.fixed_salary - minus
         }
         return data
+
+    @swagger_auto_schema(
+        operation_description='Admin Dashboard',
+        operation_summary='Admin Dashboard',
+        manual_parameters=[
+            openapi.Parameter('start_date', type=openapi.TYPE_STRING, in_=openapi.IN_QUERY),
+            openapi.Parameter('to_date', type=openapi.TYPE_STRING, in_=openapi.IN_QUERY),
+        ],
+        responses={200: LeadStatsSerializer()},
+        tags=['admin_dashboard']
+    )
+    @is_super_admin
+    def sum_leads(self, request, *args, **kwargs):
+        data = request.query_params
+        start_date = data.get('start_date', datetime.now() - timedelta(days=15))
+        to_date = data.get('to_date', str(datetime.now().date()))
+        leads = Lead.objects.filter(updated_at__lte=to_date + ' 23:59:59', updated_at__gte=start_date, is_deleted=False,
+                                    admin__isnull=False).values('status', 'admin', 'admin__first_name',
+                                                                'admin__last_name')
+        leads_ = []
+        for lead in leads:
+            full_name = lead['admin__first_name'] + ' ' + lead['admin__last_name']
+            for lead_ in leads_:
+                if full_name == lead_['full_name']:
+                    lead_[STATUS_CHOICES[lead['status'] - 1][1].lower()] += 1
+                    break
+            else:
+                d = {'full_name': full_name, 'interested': 0, 'possible': 0, 'joined': 0, 'cancelled': 0}
+                d[STATUS_CHOICES[lead['status'] - 1][1].lower()] += 1
+                leads_.append(d)
+
+        for i in range(len(leads_)):
+            check_count = Check.objects.filter(updated_at__lte=to_date + ' 23:59:59',
+                                               updated_at__gte=start_date,
+                                               uploaded_by_id=leads[i]['admin'],
+                                               is_deleted=False, is_confirmed=True).values('student').distinct().count()
+            kpi = Salary.objects.filter(user_id=leads[i]['admin']).first().kpi_amount
+            leads_[i]['total_amount'] = kpi * check_count
+
+        serializer = LeadStatsSerializer(leads_, many=True)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        operation_description='Admin Dashboard',
+        operation_summary='Admin Dashboard',
+        manual_parameters=[
+            openapi.Parameter('year', type=openapi.TYPE_STRING, in_=openapi.IN_QUERY),
+        ],
+        responses={200: LeadCountSerializer()},
+        tags=['admin_dashboard']
+    )
+    @is_super_admin
+    def count_leads(self, request, *args, **kwargs):
+        year = request.query_params.get('year', datetime.now().year)
+        status_ = lambda num: Count("status", filter=Q(status=num))
+
+        leads = Lead.objects.filter(updated_at__year=year).aggregate(interested=status_(1),
+                                                                     possible=status_(2),
+                                                                     joined=status_(3),
+                                                                     cancelled=status_(4),
+                                                                     total=Count('id'))
+        serializer = LeadCountSerializer(leads)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)

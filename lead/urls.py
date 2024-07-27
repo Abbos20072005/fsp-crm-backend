@@ -9,6 +9,8 @@ urlpatterns = [
     path('search/', LeadViewSet.as_view({'get': 'search_lead'}), name='search_lead'),
     path('admin-dash/salary/', LeadStatsViewSet.as_view({"get": "my_salary"})),
     path('admin-dash/leads/', LeadStatsViewSet.as_view({"get": "my_leads"})),
+    path('admin-dash/amount/', LeadStatsViewSet.as_view({"get": "sum_leads"})),
+    path('admin-dash/count/', LeadStatsViewSet.as_view({"get": "count_leads"})),
     path('<int:lead_id>/comments/', CommentViewSet.as_view({'post': 'create', 'get': 'list'})),
     path('', CommentViewSet.as_view({'put': 'bulk_update_admin'})),
 ]
