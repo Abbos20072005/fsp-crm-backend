@@ -35,10 +35,11 @@ class UserViewSet(viewsets.ViewSet):
     @is_super_admin_or_hr
     def register(self, request):
         serializer = UserRegisterSerializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
     @swagger_auto_schema(
         request_body=openapi.Schema(
@@ -67,11 +68,12 @@ class UserViewSet(viewsets.ViewSet):
         user = User.objects.filter(username=data['username']).first()
         if not user:
             raise CustomApiException(error_code=ErrorCodes.USER_DOES_NOT_EXIST.value)
-        if check_password(data['password'], user.password):
-            refresh = RefreshToken.for_user(user)
-            access_token = str(refresh.access_token)
-            return Response({'access_token': access_token, 'refresh_token': str(refresh)}, status=status.HTTP_200_OK)
-        return Response({'error': 'Incorrect password', 'ok': False}, status=status.HTTP_400_BAD_REQUEST)
+        if not check_password(data['password'], user.password):
+            return Response({'error': 'Incorrect password', 'ok': False}, status=status.HTTP_400_BAD_REQUEST)
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        return Response({'access_token': access_token, 'refresh_token': str(refresh)}, status=status.HTTP_200_OK)
+
 
     @swagger_auto_schema(
         request_body=openapi.Schema(
