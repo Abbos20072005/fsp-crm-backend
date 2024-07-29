@@ -1,6 +1,5 @@
 from datetime import date
 from django.db.models import Sum
-from authentication.models import User
 from rest_framework.exceptions import ValidationError
 from lead.models import Student
 from exceptions.exception import CustomApiException
@@ -51,36 +50,21 @@ def check_paginator_data(page, page_size):
     if int(page_size) <= 0 and not str(page_size).isdigit():
         raise ValidationError('Page size must be greater than 0')
 
-# def calculate_salary_of_admin(admin_id: int) -> dict:
-#     admin = User.objects.filter(id=admin_id, is_deleted=False).first()
-#     today = date.today()
-#     kpi_from_check = Check.objects.filter(uploaded_by=admin_id, created_at__year=today.year,
-#                                           created_at__month=today.month).count()
-#     expenditure = ExpenditureStaff.objects.filter(user_id=admin_id, is_deleted=False).order_by('-created_at')
-#     minus = expenditure.values('amount').distinct().aggregate(total_amount=Sum('amount'))['total_amount'] or 0
-#     data = {
-#         'student_quantity': kpi_from_check,
-#         'kpi_amount': kpi_from_check * admin.kpi,
-#         "fixed_salary": admin.fixed_salary,
-#         'fine': minus,
-#         'total': kpi_from_check * admin.kpi + admin.fixed_salary - minus
-#     }
-#     return data
-#
-#
-# def calculate_confirmed_check(type) -> dict:
-#     today = date.today()
-#     outcome_type = OutcomeType.objects.filter(is_deleted=False, name=type).first()
-#     outcome_type_percent = outcome_type.values('type')
-#     check = Check.objects.filter(created_at__year=today.year, created_at__month=today.month, is_confirmed=True,
-#                                  is_deleted=False).order_by('created_at')
-#     confirmed = check.values('amount').distinct().aggregate(total_amount=Sum('amount'))['total_amount']
-#     limit_amount = confirmed * outcome_type_percent / 100
-#     outcome = Outcome.objects.filter(created_at__year=today.year, created_at__month=today.month, is_deleted=False,
-#                                      type=outcome_type).first()
-#     outcome_amount = outcome.values('amount').distinct().aggregate(total_amount=Sum('amount'))['total_amount']
-#     return {
-#             'limit': limit_amount,
-#             'used': outcome_amount,
-#             'usable': limit_amount - outcome_amount
-#             }
+
+def outcome_data(out_type) -> dict:
+    today = date.today()
+    outcome_type = OutcomeType.objects.filter(is_deleted=False, id=out_type).first()
+    outcome_type_percent = outcome_type.limit
+    check = Check.objects.filter(created_at__year=today.year, created_at__month=today.month, is_confirmed=True,
+                                 is_deleted=False).order_by('created_at')
+    confirmed = float(check.values('amount').distinct().aggregate(total_amount=Sum('amount'))['total_amount']) or 0
+    limit_amount = confirmed * outcome_type_percent / 100
+    outcome = Outcome.objects.filter(created_at__year=today.year, created_at__month=today.month, is_deleted=False,
+                                     type=outcome_type).order_by('created_at')
+    outcome_amount = float(
+        outcome.values('amount').distinct().aggregate(total_amount=Sum('amount'))['total_amount']) or 0
+    return {
+        'limit': limit_amount,
+        'used': outcome_amount,
+        'usable': limit_amount - outcome_amount
+    }

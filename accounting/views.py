@@ -6,7 +6,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from .utils import check_paginator_data
+from .utils import check_paginator_data, outcome_data
 
 from core.custom_pagination import CustomPagination
 from core.BasePermissions import is_super_admin_or_hr, is_from_accounting_department, \
@@ -20,7 +20,7 @@ from .serializers import (CheckSerializer, OutcomeTypeSerializer, OutcomeSeriali
                           ExpenditureStaffSerializer, CheckFilterSerializer, AdminCheckFilterSerializer)
 from .dtos.requests import (CheckRequestSerializer, OutcomeTypeRequestSerializer, OutcomeRequestSerializer,
                             OutcomeTypeRequestUpdateSerializer, ExpenditureStaffRequestSerializer,
-                            ExpenditureStaffRequestUpdateSerializer)
+                            ExpenditureStaffRequestUpdateSerializer, OutcomeRequestUpdateSerializer)
 
 
 # TODO:filter for checks
@@ -176,7 +176,8 @@ class OutcomeViewSet(ViewSet):
         if not serializer.is_valid():
             raise CustomApiException(error_code=ErrorCodes.VALIDATION_FAILED.value, message=serializer.errors)
         serializer.save()
-        return Response(data={'message': serializer.data, 'ok': True}, status=status.HTTP_201_CREATED)
+        inform = outcome_data(serializer.data['type'])
+        return Response(data={**serializer.data, **inform, 'ok': True}, status=status.HTTP_201_CREATED)
 
     @swagger_auto_schema(
         operation_summary='Outcome detail',
@@ -192,24 +193,24 @@ class OutcomeViewSet(ViewSet):
         serializer = OutcomeSerializer(queryset)
         return Response(data={'message': serializer.data, 'ok': True}, status=status.HTTP_200_OK)
 
-    # @swagger_auto_schema(
-    #     operation_summary='Outcome update',
-    #     operation_description='Outcome update',
-    #     tags=['Outcome'],
-    #     request_body=OutcomeRequestUpdateSerializer,
-    #     responses={200: OutcomeSerializer(), 400: "Invalid data provided", 404: "Outcome not found"}
-    # )
-    # @is_super_admin_or_hr
-    # def update(self, request, pk=None):
-    #     instance = Outcome.objects.filter(id=pk, is_deleted=False).first()
-    #     if not instance:
-    #         raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
-    #
-    #     serializer = OutcomeSerializer(instance, data=request.data, partial=True)
-    #     if not serializer.is_valid():
-    #         raise CustomApiException(error_code=ErrorCodes.VALIDATION_FAILED.value, message=serializer.errors)
-    #     serializer.save()
-    #     return Response(data={'message': serializer.data, 'ok': True}, status=status.HTTP_200_OK)
+    @swagger_auto_schema(
+        operation_summary='Outcome update',
+        operation_description='Outcome update',
+        tags=['Outcome'],
+        request_body=OutcomeRequestUpdateSerializer,
+        responses={200: OutcomeSerializer(), 400: "Invalid data provided", 404: "Outcome not found"}
+    )
+    @is_super_admin_or_hr
+    def update(self, request, pk=None):
+        instance = Outcome.objects.filter(id=pk, is_deleted=False).first()
+        if not instance:
+            raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
+
+        serializer = OutcomeSerializer(instance, data=request.data, partial=True)
+        if not serializer.is_valid():
+            raise CustomApiException(error_code=ErrorCodes.VALIDATION_FAILED.value, message=serializer.errors)
+        serializer.save()
+        return Response(data={'message': serializer.data, 'ok': True}, status=status.HTTP_200_OK)
 
 
 class OutcomeFilterViewSet(ViewSet):

@@ -11,7 +11,7 @@ urlpatterns = [
          OutcomeTypeViewSet.as_view({'patch': 'update'})),
     path('outcome-types/', OutcomeTypeViewSet.as_view({'get': 'list', 'post': 'create'})),
 
-    path('outcome/<int:pk>/', OutcomeViewSet.as_view({'get': 'retrieve'})),
+    path('outcome/<int:pk>/', OutcomeViewSet.as_view({'get': 'retrieve', 'patch': 'update'})),
     path('outcomes/', OutcomeViewSet.as_view({'get': 'list', 'post': 'create'})),
 
     path('outcome/filter/', OutcomeFilterViewSet.as_view({'get': 'outcome_filter'})),
