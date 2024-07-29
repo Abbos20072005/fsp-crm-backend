@@ -8,7 +8,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 
 class Check(BaseModel):
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE)
-    amount = models.DecimalField(default=0.00, max_digits=15, decimal_places=2)
+    amount = models.DecimalField(default=0.00, max_digits=15, decimal_places=2, validators=[MinValueValidator(0)])
     file = models.ImageField(upload_to='check_images/',
                              validators=[FileExtensionValidator(allowed_extensions=['png', 'jpg', 'jpeg'])])
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
@@ -27,7 +27,7 @@ class Salary(BaseModel):
 class ExpenditureStaff(BaseModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
-    amount = models.DecimalField(default=0.00, max_digits=15, decimal_places=2)
+    amount = models.DecimalField(default=0.00, max_digits=15, decimal_places=2, validators=[MinValueValidator(0)])
 
     def __str__(self):
         return f'{self.name} {self.user.username}'
@@ -43,7 +43,7 @@ class OutcomeType(BaseModel):
 
 class Outcome(BaseModel):
     type = models.ForeignKey(OutcomeType, on_delete=models.CASCADE)
-    amount = models.DecimalField(default=0.00, max_digits=15, decimal_places=2)
+    amount = models.DecimalField(default=0.00, max_digits=15, decimal_places=2, validators=[MinValueValidator(0)])
 
     def __str__(self):
         return f'{self.type.name}'
