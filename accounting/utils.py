@@ -43,12 +43,8 @@ def whose_student(*args, **kwargs):
 
 
 def check_paginator_data(page, page_size):
-    if type(page) is not int and type(page_size) is not int:
-        raise ValidationError('Page and Page size should be integer number')
-    if int(page) <= 0 and not str(page).isdigit():
-        raise ValidationError('Page must be greater than 0')
-    if int(page_size) <= 0 and not str(page_size).isdigit():
-        raise ValidationError('Page size must be greater than 0')
+    if not str(page).isnumeric() or not str(page_size).isnumeric():
+        raise ValidationError('Page and Page size should be positive integer number')
 
 
 def outcome_data(out_type) -> dict:

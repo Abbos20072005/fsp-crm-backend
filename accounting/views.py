@@ -14,7 +14,7 @@ from core.BasePermissions import is_super_admin_or_hr, is_from_accounting_depart
 
 from exceptions.exception import CustomApiException
 from exceptions.error_codes import ErrorCodes
-
+from authentication.models import User
 from .models import Check, OutcomeType, Outcome, ExpenditureStaff
 from .serializers import (CheckSerializer, OutcomeTypeSerializer, OutcomeSerializer, OutcomeFilterSerializer,
                           ExpenditureStaffSerializer, CheckFilterSerializer, AdminCheckFilterSerializer)
@@ -23,22 +23,10 @@ from .dtos.requests import (CheckRequestSerializer, OutcomeTypeRequestSerializer
                             ExpenditureStaffRequestUpdateSerializer, OutcomeRequestUpdateSerializer)
 
 
-# TODO:filter for checks
 class CheckViewSet(ViewSet):
     pagination_class = CustomPagination
     permission_classes = [IsAuthenticated, ]
     parser_classes = [MultiPartParser, FormParser]
-
-    # @swagger_auto_schema(
-    #     operation_summary='Checks list for accountant',
-    #     operation_description='Checks list for accountant for confirmation',
-    #     responses={200: CheckSerializer(many=True)},
-    #     tags=['Check']
-    # )
-    # def list(self, request):
-    #     check = whose_check_list(request)
-    #     serializer = CheckSerializer(check, many=True)
-    #     return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         operation_summary='Create check',
@@ -283,7 +271,7 @@ class ExpenditureStaffViewSet(ViewSet):
     )
     @is_super_admin_or_hr
     def create(self, request, pk):
-        user = ExpenditureStaff.objects.filter(id=pk).first()
+        user = User.objects.filter(id=pk).first()
         if user.is_deleted is True:
             raise CustomApiException(error_code=ErrorCodes.USER_DOES_NOT_EXIST.value)
         serializer = ExpenditureStaffSerializer(data={'user': pk, **request.data})
@@ -387,25 +375,3 @@ class AdminCheckFilterViewSet(ViewSet):
         check = Check.objects.filter(**result)
         data = CheckSerializer(check, many=True).data
         return Response(data={'message': data, 'ok': True}, status=status.HTTP_200_OK)
-
-#
-# class AdminSalaryViewSet(ViewSet):
-#     @is_accountant_or_super_admin
-#     def get_salary(self, request, pk=None):
-#         data = calculate_salary_of_admin(pk)
-#         if not data:
-#             raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
-#         return Response(data={'result': data, 'ok': True}, status=status.HTTP_200_OK)
-#
-#
-# class CheckAmountViewSet(ViewSet):
-#
-#     @is_accountant_or_super_admin
-#     def get_check(self, request):
-#         amount = calculate_confirmed_check()
-#         if not amount:
-#             raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
-#         data = {
-#             'amount': amount
-#         }
-#         return Response(data={'result': data, 'ok': True}, status=status.HTTP_200_OK)

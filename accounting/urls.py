@@ -17,13 +17,12 @@ urlpatterns = [
     path('outcome/filter/', OutcomeFilterViewSet.as_view({'get': 'outcome_filter'})),
 
     path('expenditure-staff/<int:pk>/',
-         ExpenditureStaffViewSet.as_view({'get': 'retrieve', 'patch': 'update'})),
-    path('expenditure-staff/', ExpenditureStaffViewSet.as_view({'get': 'list', 'post': 'create'})),
+         ExpenditureStaffViewSet.as_view({'get': 'retrieve', 'patch': 'update', 'post': 'create'})),
+    path('expenditure-staff/', ExpenditureStaffViewSet.as_view({'get': 'list'})),
 
     path('check/filter/', CheckFilterViewSet.as_view({'get': 'check_filter'})),
     path('admin-check/filter/', AdminCheckFilterViewSet.as_view({'get': 'check_by_admin_filter'})),
-    # path('salary/<int:user_id>/', AdminSalaryViewSet.as_view({'get': 'get_salary'})),
-    # path('checks-amount/', CheckAmountViewSet.as_view({'get': 'get_check'})),
+
 ]
 
 """
