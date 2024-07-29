@@ -6,6 +6,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from .utils import check_paginator_data
 
 from core.custom_pagination import CustomPagination
 from core.BasePermissions import is_super_admin_or_hr, is_from_accounting_department, \
@@ -18,8 +19,7 @@ from .models import Check, OutcomeType, Outcome, ExpenditureStaff
 from .serializers import (CheckSerializer, OutcomeTypeSerializer, OutcomeSerializer, OutcomeFilterSerializer,
                           ExpenditureStaffSerializer, CheckFilterSerializer, AdminCheckFilterSerializer)
 from .dtos.requests import (CheckRequestSerializer, OutcomeTypeRequestSerializer, OutcomeRequestSerializer,
-                            OutcomeTypeRequestUpdateSerializer,
-                            OutcomeRequestUpdateSerializer, ExpenditureStaffRequestSerializer,
+                            OutcomeTypeRequestUpdateSerializer, ExpenditureStaffRequestSerializer,
                             ExpenditureStaffRequestUpdateSerializer)
 
 
@@ -63,8 +63,8 @@ class CheckViewSet(ViewSet):
         tags=['Check']
     )
     @is_accountant_or_super_admin
-    def confirm_check(self, request, check_id=None):
-        check = Check.objects.filter(id=check_id, is_deleted=False, is_confirmed=False).first()
+    def confirm_check(self, request, pk=None):
+        check = Check.objects.filter(id=pk, is_deleted=False, is_confirmed=False).first()
 
         if not check:
             raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
@@ -90,8 +90,9 @@ class OutcomeTypeViewSet(ViewSet):
     )
     @is_super_admin_or_hr
     def list(self, request):
-        page = int(request.query_params.get('page', 1))
-        page_size = int(request.query_params.get('page_size', 10))
+        page = request.query_params.get('page', 1)
+        page_size = request.query_params.get('page_size', 10)
+        check_paginator_data(page, page_size)
         paginator = CustomPagination()
         paginator.page = page
         paginator.page_size = page_size
@@ -122,8 +123,8 @@ class OutcomeTypeViewSet(ViewSet):
         tags=['Outcome']
     )
     @is_super_admin_or_hr
-    def update(self, request, outcome_type_id=None):
-        instance = OutcomeType.objects.filter(id=outcome_type_id, is_deleted=False).first()
+    def update(self, request, pk=None):
+        instance = OutcomeType.objects.filter(id=pk, is_deleted=False).first()
         if not instance:
             raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
 
@@ -151,8 +152,9 @@ class OutcomeViewSet(ViewSet):
     )
     @is_from_accounting_department
     def list(self, request):
-        page = int(request.query_params.get('page', 1))
-        page_size = int(request.query_params.get('page_size', 10))
+        page = request.query_params.get('page', 1)
+        page_size = request.query_params.get('page_size', 10)
+        check_paginator_data(page, page_size)
         paginator = CustomPagination()
         paginator.page = page
         paginator.page_size = page_size
@@ -183,8 +185,8 @@ class OutcomeViewSet(ViewSet):
         responses={200: OutcomeSerializer(), 404: "Outcome not found"},
     )
     @is_super_admin_or_hr
-    def retrieve(self, request, outcome_id=None):
-        queryset = Outcome.objects.filter(id=outcome_id, is_deleted=False).first()
+    def retrieve(self, request, pk=None):
+        queryset = Outcome.objects.filter(id=pk, is_deleted=False).first()
         if not queryset:
             raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
         serializer = OutcomeSerializer(queryset)
@@ -198,8 +200,8 @@ class OutcomeViewSet(ViewSet):
     #     responses={200: OutcomeSerializer(), 400: "Invalid data provided", 404: "Outcome not found"}
     # )
     # @is_super_admin_or_hr
-    # def update(self, request, outcome_id=None):
-    #     instance = Outcome.objects.filter(id=outcome_id, is_deleted=False).first()
+    # def update(self, request, pk=None):
+    #     instance = Outcome.objects.filter(id=pk, is_deleted=False).first()
     #     if not instance:
     #         raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
     #
@@ -260,8 +262,9 @@ class ExpenditureStaffViewSet(ViewSet):
     )
     @is_from_accounting_department
     def list(self, request):
-        page = int(request.query_params.get('page', 1))
-        page_size = int(request.query_params.get('page_size', 10))
+        page = request.query_params.get('page', 1)
+        page_size = request.query_params.get('page_size', 10)
+        check_paginator_data(page, page_size)
         paginator = CustomPagination()
         paginator.page = page
         paginator.page_size = page_size
@@ -295,8 +298,8 @@ class ExpenditureStaffViewSet(ViewSet):
         responses={200: ExpenditureStaffSerializer(), 404: "ExpenditureStaff not found"}
     )
     @is_super_admin_or_hr
-    def retrieve(self, request, expenditure_staff_id=None):
-        queryset = ExpenditureStaff.objects.filter(id=expenditure_staff_id, is_deleted=False).first()
+    def retrieve(self, request, pk=None):
+        queryset = ExpenditureStaff.objects.filter(id=pk, is_deleted=False).first()
         if not queryset:
             raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
         serializer = ExpenditureStaffSerializer(queryset)
@@ -311,8 +314,8 @@ class ExpenditureStaffViewSet(ViewSet):
                    404: "ExpenditureStaff not found"}
     )
     @is_super_admin_or_hr
-    def update(self, request, expenditure_staff_id=None):
-        instance = ExpenditureStaff.objects.filter(id=expenditure_staff_id, is_deleted=False).first()
+    def update(self, request, pk=None):
+        instance = ExpenditureStaff.objects.filter(id=pk, is_deleted=False).first()
         if not instance:
             raise CustomApiException(error_code=ErrorCodes.NOT_FOUND.value)
 
