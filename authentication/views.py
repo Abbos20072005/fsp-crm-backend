@@ -256,8 +256,8 @@ class UserViewSet(viewsets.ViewSet):
         responses={200: UserSerializer(many=True)},
     )
     def search_user(self, request):
-        page = int(request.query_params.get('page', 1))
-        size = int(request.query_params.get('size', 10))
+        page = request.query_params.get('page', 1)
+        size = request.query_params.get('size', 10)
         query = request.query_params.get('query', "+")
         users = User.objects.filter(is_deleted=False, username__icontains=query).exclude(role=4)
         paginator = CustomPagination()
