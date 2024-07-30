@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (CheckViewSet, OutcomeTypeViewSet, OutcomeViewSet, OutcomeFilterViewSet, ExpenditureStaffViewSet,
-                    CheckFilterViewSet, AdminCheckFilterViewSet)
+                    CheckFilterViewSet, AdminCheckFilterViewSet, StatsViewSet)
 
 urlpatterns = [
     path('check/<int:pk>/',
