@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+import uuid
 
 ROLE_CHOICES = (
     (1, 'Admin'),
@@ -21,6 +22,12 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+
+    def save(self, *args, **kwargs):
+        # after soft delete assigns unique token, preventing user exist error in register new user
+        if self.is_deleted:
+            self.username = f"{self.username}-{uuid.uuid4()}"
+        super().save(*args, **kwargs)
 
 
 class BlacklistedAccessToken(models.Model):

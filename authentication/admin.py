@@ -3,7 +3,7 @@ from .models import User, BlacklistedAccessToken
 
 
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('id', 'username', 'role', 'kpi', 'fixed_salary')
+    list_display = ('id', 'username', 'is_deleted', 'role', 'kpi', 'fixed_salary')
     list_display_links = ('id', 'username', 'role', 'kpi', 'fixed_salary')
 
 

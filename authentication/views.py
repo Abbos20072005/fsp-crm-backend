@@ -64,11 +64,11 @@ class UserViewSet(viewsets.ViewSet):
     )
     def login(self, request):
         data = request.data
-        user = User.objects.filter(username=data['username']).first()
+        user = User.objects.filter(username=data['username'], is_deleted=False).first()
         if not user:
             raise CustomApiException(error_code=ErrorCodes.USER_DOES_NOT_EXIST.value)
         if not check_password(data['password'], user.password):
-            return Response({'error': 'Incorrect password', 'ok': False}, status=status.HTTP_400_BAD_REQUEST)
+            raise CustomApiException(ErrorCodes.INVALID_INPUT.value, message='Incorrect password')
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
         return Response({'access_token': access_token, 'refresh_token': str(refresh)}, status=status.HTTP_200_OK)
@@ -121,10 +121,7 @@ class UserViewSet(viewsets.ViewSet):
         old_password = serializer.data.get('old_password')
         new_password = serializer.data.get('new_password')
         if not user.check_password(old_password):
-            return Response(
-                data={'error': 'Old password is incorrect!', 'ok': False},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            raise CustomApiException(ErrorCodes.INVALID_INPUT.value, message='Old password is incorrect')
         user.set_password(new_password)
         user.save()
         update_session_auth_hash(request, user)  # Password Hashing
@@ -197,8 +194,11 @@ class UserViewSet(viewsets.ViewSet):
         user = User.objects.filter(pk=user_id, is_deleted=False).first()
         if not user:
             raise CustomApiException(error_code=ErrorCodes.USER_DOES_NOT_EXIST.value)
+        if request.user.role == 3 and user.role == 4:
+            raise CustomApiException(error_code=ErrorCodes.USER_DOES_NOT_EXIST.value,
+                                     message='You dont have permission to perform this action')
         user.is_deleted = True
-        user.save(update_fields=['is_deleted'])
+        user.save()
         return Response(data={'message': 'User soft deleted successfully', 'ok': True}, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
