@@ -1,6 +1,8 @@
 from datetime import date, datetime, timedelta
+from django.utils import timezone
 
 from django.core.paginator import Paginator
+from django.db.models.functions import TruncDay, TruncWeek, TruncMonth, TruncYear
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -9,8 +11,7 @@ from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Lead, Student, DocumentType, StudentDocuments, Comment,  STATUS_CHOICES
-
+from .models import Lead, Student, DocumentType, StudentDocuments, Comment, STATUS_CHOICES, SOURCE_CHOICES
 
 from authentication.models import User
 from .permissions import check_role
@@ -452,27 +453,7 @@ class StatisticsViewSet(ViewSet):
         request_body=HRStatisticsSerializer,
         operation_summary="Get lead statistics",
         operation_description="Retrieve statistics about leads within a specified date range.",
-        responses={
-            200: openapi.Response(
-                description="Statistics data returned",
-                examples={
-                    'application/json': {
-                        "total_leads": 10,
-                        "leads_by_status": {
-                            "1": 5,
-                            "2": 3,
-                            "3": 2,
-                            "4": 0
-                        },
-                        "students_by_leads": {
-                            "lead1": 2,
-                            "lead2": 3
-                        }
-                    }
-                }
-            ),
-            400: openapi.Response(description="Invalid input")
-        }
+        responses={200: 'application/json'}
     )
     @is_super_admin_or_hr
     def lead_statistics(self, request):
@@ -481,22 +462,41 @@ class StatisticsViewSet(ViewSet):
             start_date = serializer.validated_data['start_date']
             end_date = serializer.validated_data['end_date']
 
+            start_date = timezone.make_aware(timezone.datetime.combine(start_date, timezone.datetime.min.time()))
+            end_date = timezone.make_aware(timezone.datetime.combine(end_date, timezone.datetime.max.time()))
 
             leads = Lead.objects.filter(created_at__range=[start_date, end_date])
+            status_dict = dict(STATUS_CHOICES)
+            source_dict = dict(SOURCE_CHOICES)
 
+            def format_leads(queryset, field, func):
+                return {
+                    item[field]: item['count'] for item in queryset.values(field).annotate(count=Count('id'))
+                }
 
-            total_leads = leads.count()
-            leads_by_status = leads.values('status').annotate(count=Count('status'))
+            leads_by_status = format_leads(leads, 'status', status_dict)
+            leads_by_source = format_leads(leads, 'source', source_dict)
             students_by_leads = leads.annotate(student_count=Count('student')).values('name', 'student_count')
+            daily_leads = leads.annotate(day=TruncDay('created_at')).values('day').annotate(count=Count('id'))
+            weekly_leads = leads.annotate(week=TruncWeek('created_at')).values('week').annotate(count=Count('id'))
+            monthly_leads = leads.annotate(month=TruncMonth('created_at')).values('month').annotate(count=Count('id'))
+            yearly_leads = leads.annotate(year=TruncYear('created_at')).values('year').annotate(count=Count('id'))
+
+            def format_date_leads(queryset, field, format_str):
+                return {
+                    item[field].strftime(format_str): item['count'] for item in queryset
+                }
 
             response_data = {
-                "total_leads": total_leads,
-                "leads_by_status": {
-                    status['status']: status['count'] for status in leads_by_status
-                },
-                "students_by_leads": {
-                    lead['name']: lead['student_count'] for lead in students_by_leads
-                }
+                "total_leads": leads.count(),
+                "leads_by_status": {status_dict[k]: v for k, v in leads_by_status.items()},
+                "students_by_leads": {lead['name']: lead['student_count'] for lead in students_by_leads},
+                "leads_by_source": {source_dict[k]: v for k, v in leads_by_source.items()},
+                "daily_leads": format_date_leads(daily_leads, 'day', '%Y-%m-%d'),
+                "weekly_leads": format_date_leads(weekly_leads, 'week', '%Y-%m-%d'),
+                "monthly_leads": format_date_leads(monthly_leads, 'month', '%Y-%m'),
+                "yearly_leads": format_date_leads(yearly_leads, 'year', '%Y')
             }
+
             return Response(response_data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
