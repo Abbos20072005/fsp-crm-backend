@@ -67,3 +67,9 @@ class ExpenditureStaffSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExpenditureStaff
         fields = ['id', 'user', 'name', 'amount']
+
+
+class IncomeSerializer(serializers.Serializer):
+    total = serializers.DecimalField(max_digits=15, decimal_places=2)
+    reklama_sum = serializers.DecimalField(max_digits=15, decimal_places=2)
+    income = serializers.DecimalField(max_digits=15, decimal_places=2)

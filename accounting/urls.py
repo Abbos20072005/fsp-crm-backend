@@ -22,6 +22,8 @@ urlpatterns = [
 
     path('check/filter/', CheckFilterViewSet.as_view({'get': 'check_filter'})),
     path('admin-check/filter/', AdminCheckFilterViewSet.as_view({'get': 'check_by_admin_filter'})),
+    path('stats-income/', StatsViewSet.as_view({'get': 'income'})),
+
 
 ]
 
