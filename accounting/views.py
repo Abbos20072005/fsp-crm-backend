@@ -375,4 +375,33 @@ class AdminCheckFilterViewSet(ViewSet):
         check = Check.objects.filter(**result)
         data = CheckSerializer(check, many=True).data
         return Response(data={'message': data, 'ok': True}, status=status.HTTP_200_OK)
-#
+
+
+class StatsViewSet(ViewSet):
+
+    @swagger_auto_schema(
+        operation_description="Income",
+        operation_summary="Income",
+        responses={200: IncomeSerializer()},
+        tags=['Accounting Stats']
+    )
+    @is_accountant_or_super_admin
+    def income(self, request, *args, **kwargs):
+        total_sum = Check.objects.filter(is_confirmed=True, is_deleted=False).values(
+            'amount').distinct().aggregate(total_amount=Sum('amount'))['total_amount']
+
+        reklama = OutcomeType.objects.filter(name='Reklama').first()
+
+        reklama_sum = reklama.limit / 100 * int(total_sum) if reklama else 0
+
+        income = int(total_sum) - reklama_sum
+
+        data = {
+            "total": total_sum,
+            "reklama_sum": reklama_sum,
+            "income": income
+        }
+
+        serializer = IncomeSerializer(data)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
