@@ -17,7 +17,7 @@ from exceptions.error_codes import ErrorCodes
 from authentication.models import User
 from .models import Check, OutcomeType, Outcome, ExpenditureStaff
 from .serializers import (CheckSerializer, OutcomeTypeSerializer, OutcomeSerializer, OutcomeFilterSerializer,
-                          ExpenditureStaffSerializer, CheckFilterSerializer, AdminCheckFilterSerializer)
+                          ExpenditureStaffSerializer, CheckFilterSerializer, AdminCheckFilterSerializer, IncomeSerializer)
 from .dtos.requests import (CheckRequestSerializer, OutcomeTypeRequestSerializer, OutcomeRequestSerializer,
                             OutcomeTypeRequestUpdateSerializer, ExpenditureStaffRequestSerializer,
                             ExpenditureStaffRequestUpdateSerializer, OutcomeRequestUpdateSerializer)
