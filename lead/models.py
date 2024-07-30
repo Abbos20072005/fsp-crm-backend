@@ -9,6 +9,13 @@ STATUS_CHOICES = (
     (4, 'CANCELLED'),
 )
 
+SOURCE_CHOICES = (
+    (1, 'INSTAGRAM'),
+    (2, 'TELEGRAM'),
+    (3, 'WEBSITE'),
+    (4, 'OTHER'),
+)
+
 
 class Lead(BaseModel):
     name = models.CharField(max_length=250)
@@ -16,6 +23,7 @@ class Lead(BaseModel):
     status = models.IntegerField(choices=STATUS_CHOICES, default=1, blank=True, null=True)
     address = models.CharField(max_length=100)
     admin = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
+    source = models.IntegerField(choices=SOURCE_CHOICES, default=1, blank=True, null=True)
 
     def __str__(self):
         return self.name
