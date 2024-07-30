@@ -40,7 +40,6 @@ class UserViewSet(viewsets.ViewSet):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-
     @swagger_auto_schema(
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
@@ -73,7 +72,6 @@ class UserViewSet(viewsets.ViewSet):
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
         return Response({'access_token': access_token, 'refresh_token': str(refresh)}, status=status.HTTP_200_OK)
-
 
     @swagger_auto_schema(
         request_body=openapi.Schema(
@@ -215,13 +213,11 @@ class UserViewSet(viewsets.ViewSet):
     )
     @is_super_admin
     def filter_users(self, request):
-        page = int(request.query_params.get('page', 1))
-        size = int(request.query_params.get('size', 10))
-
         serializer = UserFilterSerializer(data=request.query_params)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+        page = serializer.validated_data['page']
+        size = serializer.validated_data['size']
         role = serializer.validated_data.get('role')
         kpi = serializer.validated_data.get('kpi')
         fixed_salary = serializer.validated_data.get('fixed_salary')

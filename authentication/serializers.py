@@ -90,6 +90,8 @@ class LogoutSerializer(serializers.Serializer):
 
 
 class UserFilterSerializer(serializers.Serializer):
+    page = serializers.IntegerField(required=False)
+    size = serializers.IntegerField(required=False)
     role = serializers.IntegerField(required=False)
     kpi = serializers.DecimalField(required=False, max_digits=15, decimal_places=2)
     fixed_salary = serializers.DecimalField(required=False, max_digits=15, decimal_places=2)
@@ -100,11 +102,12 @@ class UserFilterSerializer(serializers.Serializer):
             raise ValidationError({"role": "Role must be one of the following values: 1, 2, 3."}, code=400)
         return data
 
+
 class SelfChangeUserDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'last_name', 'email','role']
+        fields = ['username', 'first_name', 'last_name', 'email', 'role']
         extra_kwargs = {
             'username': {'read_only': True},
-            'role': {'read_only': True},# Username va role ni o'zgartirib bo'lmaydi
+            'role': {'read_only': True},  # Username va role ni o'zgartirib bo'lmaydi
         }
