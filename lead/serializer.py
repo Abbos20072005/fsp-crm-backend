@@ -10,11 +10,16 @@ class LeadSerializer(serializers.ModelSerializer):
         model = Lead
         fields = ['id', 'name', 'phone', 'address', 'status', 'created_at']
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['comments'] = CommentListSerializer(Comment.objects.filter(lead_id=instance.id), many=True).data
+        return data
+
 
 class LeadCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lead
-        fields = ['admin', 'name', 'phone', 'address']
+        fields = ['id', 'admin', 'name', 'phone', 'address']
 
 
 class CommentCreateSerializer(serializers.ModelSerializer):
