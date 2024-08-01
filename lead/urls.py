@@ -21,7 +21,8 @@ urlpatterns = [
     path('admin-dash/count/', LeadStatsViewSet.as_view({"get": "count_leads"})),
     path('<int:lead_id>/comments/', CommentViewSet.as_view({'post': 'create', 'get': 'list'})),
     path('', CommentViewSet.as_view({'put': 'bulk_update_admin'})),
-    path('api/lead/statistics/', StatisticsViewSet.as_view({'post': 'lead_statistics'}), name='lead-statistics')
+    path('lead-statistics/', StatisticsViewSet.as_view({'post': 'lead_statistics'}), name='lead-statistics'),
+
 
 ]
 

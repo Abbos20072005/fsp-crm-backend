@@ -18,7 +18,7 @@ from .permissions import check_role
 from .serializer import LeadCreateSerializer, LeadUpdateSerializer, LeadSerializer, \
     CommentCreateSerializer, CommentListSerializer, BulkUpdateAdminSerializer, LeadStatsSerializer, LeadCountSerializer, \
     StudentSerializer, DocumentTypeSerializer, StudentDocumentSerializer, MakeStudentSerializer, MyLeadSerializer, \
-    HRStatisticsSerializer
+    HRStatisticsSerializer, AdditionalStatisticsSerializer
 
 from django.db.models import Q, Sum, Count, Case, When, IntegerField
 from accounting.models import Check, ExpenditureStaff, Salary
@@ -462,41 +462,31 @@ class StatisticsViewSet(ViewSet):
             start_date = serializer.validated_data['start_date']
             end_date = serializer.validated_data['end_date']
 
-            start_date = timezone.make_aware(timezone.datetime.combine(start_date, timezone.datetime.min.time()))
-            end_date = timezone.make_aware(timezone.datetime.combine(end_date, timezone.datetime.max.time()))
-
-            leads = Lead.objects.filter(created_at__range=[start_date, end_date])
+            leads = Lead.objects.filter(created_at__gt=start_date, created_at__lt=end_date)
             status_dict = dict(STATUS_CHOICES)
             source_dict = dict(SOURCE_CHOICES)
 
-            def format_leads(queryset, field, func):
-                return {
-                    item[field]: item['count'] for item in queryset.values(field).annotate(count=Count('id'))
-                }
-
-            leads_by_status = format_leads(leads, 'status', status_dict)
-            leads_by_source = format_leads(leads, 'source', source_dict)
+            leads_by_status = leads.values('status').annotate(count=Count('id'))
+            leads_by_source = leads.values('source').annotate(count=Count('id'))
             students_by_leads = leads.annotate(student_count=Count('student')).values('name', 'student_count')
             daily_leads = leads.annotate(day=TruncDay('created_at')).values('day').annotate(count=Count('id'))
             weekly_leads = leads.annotate(week=TruncWeek('created_at')).values('week').annotate(count=Count('id'))
             monthly_leads = leads.annotate(month=TruncMonth('created_at')).values('month').annotate(count=Count('id'))
             yearly_leads = leads.annotate(year=TruncYear('created_at')).values('year').annotate(count=Count('id'))
 
-            def format_date_leads(queryset, field, format_str):
-                return {
-                    item[field].strftime(format_str): item['count'] for item in queryset
-                }
-
             response_data = {
                 "total_leads": leads.count(),
-                "leads_by_status": {status_dict[k]: v for k, v in leads_by_status.items()},
+                "leads_by_status": {status_dict[item['status']]: item['count'] for item in leads_by_status},
                 "students_by_leads": {lead['name']: lead['student_count'] for lead in students_by_leads},
-                "leads_by_source": {source_dict[k]: v for k, v in leads_by_source.items()},
-                "daily_leads": format_date_leads(daily_leads, 'day', '%Y-%m-%d'),
-                "weekly_leads": format_date_leads(weekly_leads, 'week', '%Y-%m-%d'),
-                "monthly_leads": format_date_leads(monthly_leads, 'month', '%Y-%m'),
-                "yearly_leads": format_date_leads(yearly_leads, 'year', '%Y')
+                "leads_by_source": {source_dict[item['source']]: item['count'] for item in leads_by_source},
+                "daily_leads": {item['day'].strftime('%Y-%m-%d'): item['count'] for item in daily_leads},
+                "weekly_leads": {item['week'].strftime('%Y-%m-%d'): item['count'] for item in weekly_leads},
+                "monthly_leads": {item['month'].strftime('%Y-%m'): item['count'] for item in monthly_leads},
+                "yearly_leads": {item['year'].strftime('%Y'): item['count'] for item in yearly_leads}
             }
 
             return Response(response_data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+

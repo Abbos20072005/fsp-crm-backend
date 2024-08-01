@@ -147,3 +147,12 @@ class LeadCountSerializer(serializers.Serializer):
 class HRStatisticsSerializer(serializers.Serializer):
     start_date = serializers.DateField(required=True)
     end_date = serializers.DateField(required=True)
+
+class AdditionalStatisticsSerializer(serializers.Serializer):
+    filter = serializers.ChoiceField(
+        choices=['status', 'source', 'students', 'daily', 'weekly', 'monthly', 'yearly'],
+        required=False
+    )
+    start_date = serializers.DateField(required=True)
+    end_date = serializers.DateField(required=True)
+
