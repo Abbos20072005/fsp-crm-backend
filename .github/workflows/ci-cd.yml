@@ -48,13 +48,15 @@ jobs:
 #          rsync -avz -e "ssh -i ssh_key" --exclude='venv' --exclude='.git' ./ ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/home/project
 #          secure copy
 #          set -e
-          ssh -tt root@${{ secrets.HOST }} << EOF
-            set -e
-            cd /root/CRM_BACKEND/fsp-crm-backend
-            git pull
-            sudo systemctl restart cr_m.service
-            sudo systemctl status cr_m.service
-            curl 'https://api.telegram.org/bot6725176067:AAEDuyNZ8Hd_5H6mCqohV38648O7CpOEj3s/sendMessage?chat_id=-1002048118873&text=Succesful Deployed' EOF
+          ssh -tt root@${{ secrets.HOST }} << 'EOF'
+            set -e;
+            cd /root/CRM_BACKEND/fsp-crm-backend;
+            git pull;
+            sudo systemctl restart cr_m.service;
+            sudo systemctl status cr_m.service;
+#            curl 'https://api.telegram.org/bot6725176067:AAEDuyNZ8Hd_5H6mCqohV38648O7CpOEj3s/sendMessage?chat_id=-1002048118873&text=Succesful Deployed';
+          EOF
+          set -x
 
                
                
