@@ -1,5 +1,3 @@
-name: FSP CRM Backend Development CI/CD Pipeline
-
 on:
   push:
     branches:
@@ -27,46 +25,31 @@ jobs:
         run: |
           python manage.py test
 
-
   deploy:
     runs-on: ubuntu-latest
     needs: build
+
     steps:
       - name: Deploy to Development Server
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           HOST: ${{ secrets.HOST }}
         run: |
-          curl 'https://api.telegram.org/bot6725176067:AAEDuyNZ8Hd_5H6mCqohV38648O7CpOEj3s/sendMessage?chat_id=-1002048118873&text=test'
           echo "${SSH_PRIVATE_KEY}" > ssh_key
           chmod 600 ssh_key
 
           mkdir -p ~/.ssh
           cp ssh_key ~/.ssh/id_rsa
           ssh-keyscan -H $HOST >> ~/.ssh/known_hosts
-#          ssh root@${{ secrets.HOST }}
-#          rsync -avz -e "ssh -i ssh_key" --exclude='venv' --exclude='.git' ./ ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/home/project
-#          secure copy
-#          set -e
-          ssh -tt root@${{ secrets.HOST }} << 'EOF'
+
+          ssh -tt root@$HOST << 'EOF'
             set -e
             cd /root/CRM_BACKEND/fsp-crm-backend
             git pull
             sudo systemctl restart cr_m.service
             sudo systemctl status cr_m.service
-#            curl 'https://api.telegram.org/bot6725176067:AAEDuyNZ8Hd_5H6mCqohV38648O7CpOEj3s/sendMessage?chat_id=-1002048118873&text=Succesful Deployed';
           EOF
-          set -x
 
-               
-               
-               
-#            source /home/venv/bin/activate
-#            cd /home/fsp-crm-backend
-#            pip install -r requirements.txt
-#            python3 manage.py migrate
-#            python3 manage.py collectstatic --noinput
-#            sudo systemctl restart project.service
-#            curl ...
-#            echo "Deployment successful"
-            
+      - name: Send Success Message
+        run: |
+          curl 'https://api.telegram.org/bot6725176067:AAEDuyNZ8Hd_5H6mCqohV38648O7CpOEj3s/sendMessage?chat_id=-1002048118873&text=Successful Deployment'
