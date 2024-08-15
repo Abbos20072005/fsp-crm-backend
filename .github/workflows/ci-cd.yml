@@ -49,7 +49,3 @@ jobs:
             sudo systemctl restart cr_m.service
             sudo systemctl status cr_m.service
           EOF
-
-      - name: Send Success Message
-        run: |
-          curl 'https://api.telegram.org/bot6725176067:AAEDuyNZ8Hd_5H6mCqohV38648O7CpOEj3s/sendMessage?chat_id=-1002048118873&text=Successful Deployment'
