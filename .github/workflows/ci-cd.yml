@@ -33,29 +33,23 @@ jobs:
     needs: build
     steps:
       - name: Deploy to Development Server
-#        env:
-#          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-#          HOST: ${{ secrets.HOST }}
-#          USERNAME: ${{ secrets.USERNAME }}
-#          PASSWORD: ${{ secrets.PASSWORD }}
-#          PROJECT_NAME: ${{ secrets.PROJECT_NAME }}
         run: |
-          curl 'https://api.telegram.org/bot6725176067:AAEDuyNZ8Hd_5H6mCqohV38648O7CpOEj3s/sendMessage?chat_id=-1002048118873&text=test'
-#          echo "${SSH_PRIVATE_KEY}" > ssh_key
-#          chmod 600 ssh_key
+#          curl 'https://api.telegram.org/bot6725176067:AAEDuyNZ8Hd_5H6mCqohV38648O7CpOEj3s/sendMessage?chat_id=-1002048118873&text=test'
+          echo "${{SSH_PRIVATE_KEY}}" > ssh_key
+          chmod 600 ssh_key
 #
-#          mkdir -p ~/.ssh
-#          ssh-keyscan -H $HOST >> ~/.ssh/known_hosts
+          mkdir -p ~/.ssh
+          ssh-keyscan -H $HOST >> ~/.ssh/known_hosts
 
 #          rsync -avz -e "ssh -i ssh_key" --exclude='venv' --exclude='.git' ./ ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/home/project
 #          secure copy
-#          ssh -i ssh_key ${{ secrets.USERNAME }}@${{ secrets.HOST }} << 'EOF'
-#            cd /root/CRM_BACKEND/fsp-crm-backend
-#            git pull
-#            sudo systemctl restart cr_m.service
-#            sudo systemctl status cr_m.service
-#            curl 'https://api.telegram.org/bot6725176067:AAEDuyNZ8Hd_5H6mCqohV38648O7CpOEj3s/sendMessage?chat_id=-1002048118873&text=Succesful Deployed'
-#          EOF
+          ssh -i ssh_key ${{ secrets.USERNAME }}@${{ secrets.HOST }} << 'EOF'
+            cd /root/CRM_BACKEND/fsp-crm-backend
+            git pull
+            sudo systemctl restart cr_m.service
+            sudo systemctl status cr_m.service
+            curl 'https://api.telegram.org/bot6725176067:AAEDuyNZ8Hd_5H6mCqohV38648O7CpOEj3s/sendMessage?chat_id=-1002048118873&text=Succesful Deployed'
+          EOF
 
                
                
