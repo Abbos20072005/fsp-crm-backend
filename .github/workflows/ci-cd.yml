@@ -37,8 +37,6 @@ jobs:
     needs: build
 
     steps:
-
-
       - name: Deploy to Development Server
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
