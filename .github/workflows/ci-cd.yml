@@ -42,6 +42,7 @@ jobs:
           chmod 600 ssh_key
 
           mkdir -p ~/.ssh
+          cp ssh_key ~/.ssh/id_rsa
           ssh-keyscan -H $HOST >> ~/.ssh/known_hosts
           ssh root@${{ secrets.HOST }}
 #          rsync -avz -e "ssh -i ssh_key" --exclude='venv' --exclude='.git' ./ ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/home/project
