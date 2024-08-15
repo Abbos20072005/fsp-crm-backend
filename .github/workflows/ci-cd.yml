@@ -47,7 +47,8 @@ jobs:
 #          ssh root@${{ secrets.HOST }}
 #          rsync -avz -e "ssh -i ssh_key" --exclude='venv' --exclude='.git' ./ ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/home/project
 #          secure copy
-          ssh -i ssh_key root@${{ secrets.HOST }} << EOF
+#          set -e
+          ssh -tt -i ssh_key root@${{ secrets.HOST }} << EOF
             cd /root/CRM_BACKEND/fsp-crm-backend
             git pull
             sudo systemctl restart cr_m.service
